@@ -2,15 +2,17 @@ package mockjson
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
+	"errors"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/elangreza/e-commerce/product/internal/entity"
-	"github.com/elangreza/e-commerce/product/params"
 	"github.com/google/uuid"
 )
+
+var DataNotFound = errors.New("data not found")
 
 type ProductMock struct {
 	products []entity.Product
@@ -34,7 +36,7 @@ func LoadProductJson() (*ProductMock, error) {
 	return productMock, nil
 }
 
-func (pm *ProductMock) ListProducts(ctx context.Context, req params.ListProductsRequest) ([]entity.Product, error) {
+func (pm *ProductMock) ListProducts(ctx context.Context, req entity.ListProductRequest) ([]entity.Product, error) {
 
 	var filteredProducts = pm.filteredProducts(pm.products, req.Search)
 
@@ -59,7 +61,7 @@ func (pm *ProductMock) ListProducts(ctx context.Context, req params.ListProducts
 	return filteredProducts[start:end], nil
 }
 
-func (pm *ProductMock) TotalProducts(ctx context.Context, req params.ListProductsRequest) (int64, error) {
+func (pm *ProductMock) TotalProducts(ctx context.Context, req entity.ListProductRequest) (int64, error) {
 
 	filteredProducts := pm.filteredProducts(pm.products, req.Search)
 
@@ -73,7 +75,7 @@ func (pm *ProductMock) filteredProducts(products []entity.Product, search string
 
 	var filtered []entity.Product
 	for _, product := range products {
-		if product.Name == search || product.Description == search {
+		if strings.Contains(product.Name, search) || strings.Contains(product.Description, search) {
 			filtered = append(filtered, product)
 		}
 	}
@@ -87,5 +89,5 @@ func (pm *ProductMock) GetProductByID(ctx context.Context, productID uuid.UUID) 
 			return &product, nil
 		}
 	}
-	return nil, sql.ErrNoRows
+	return nil, DataNotFound
 }

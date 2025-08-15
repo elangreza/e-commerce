@@ -11,3 +11,10 @@ type Product struct {
 	CreatedAt   string    `json:"created_at"`
 	UpdatedAt   string    `json:"updated_at"`
 }
+
+type ListProductRequest struct {
+	Search string `json:"search"`
+	Page   int64  `json:"page"`
+	Limit  int64  `json:"limit"`
+	SortBy string `json:"sort_by"`
+}

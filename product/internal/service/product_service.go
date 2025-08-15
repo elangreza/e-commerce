@@ -1,27 +1,28 @@
 package service
 
+//go:generate mockgen -source=product_service.go -destination=./mock/mock_product_service.go -package=mock
+
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/elangreza/e-commerce/product/internal/entity"
+	"github.com/elangreza/e-commerce/product/internal/mockjson"
 	params "github.com/elangreza/e-commerce/product/params"
+	"github.com/elangreza/e-commerce/product/pkg/errs"
 	"github.com/google/uuid"
 )
 
 type (
 	productRepo interface {
-		ListProducts(ctx context.Context, req params.ListProductsRequest) ([]entity.Product, error)
-		TotalProducts(ctx context.Context, req params.ListProductsRequest) (int64, error)
+		ListProducts(ctx context.Context, req entity.ListProductRequest) ([]entity.Product, error)
+		TotalProducts(ctx context.Context, req entity.ListProductRequest) (int64, error)
 		GetProductByID(ctx context.Context, ID uuid.UUID) (*entity.Product, error)
-	}
-
-	ProductService interface {
-		ListProducts(ctx context.Context, req params.ListProductsRequest) (*params.ListProductsResponse, error)
-		GetProduct(ctx context.Context, req params.GetProductRequest) (*params.GetProductResponse, error)
 	}
 )
 
-func NewProductService(productRepo productRepo) ProductService {
+func NewProductService(productRepo productRepo) *productService {
 	return &productService{
 		productRepo: productRepo,
 	}
@@ -33,7 +34,13 @@ type productService struct {
 
 func (s *productService) ListProducts(ctx context.Context, req params.ListProductsRequest) (*params.ListProductsResponse, error) {
 	// Implementation for listing products
-	products, err := s.productRepo.ListProducts(ctx, req)
+	reqParams := entity.ListProductRequest{
+		Search: req.Search,
+		Page:   req.Page,
+		Limit:  req.Limit,
+		SortBy: req.SortBy,
+	}
+	products, err := s.productRepo.ListProducts(ctx, reqParams)
 	if err != nil {
 		return nil, err
 	}
@@ -49,12 +56,12 @@ func (s *productService) ListProducts(ctx context.Context, req params.ListProduc
 		}
 	}
 
-	total, err := s.productRepo.TotalProducts(ctx, req)
+	total, err := s.productRepo.TotalProducts(ctx, reqParams)
 	if err != nil {
 		return nil, err
 	}
 
-	totalPages := total / req.Limit
+	totalPages := total / reqParams.Limit
 	if total%req.Limit != 0 {
 		totalPages++
 	}
@@ -75,6 +82,9 @@ func (s *productService) GetProduct(ctx context.Context, req params.GetProductRe
 
 	product, err := s.productRepo.GetProductByID(ctx, productID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, mockjson.DataNotFound) {
+			return nil, errs.NotFound{Message: "product not found"}
+		}
 		return nil, err
 	}
 
