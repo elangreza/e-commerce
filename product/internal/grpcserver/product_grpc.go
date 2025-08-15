@@ -2,9 +2,12 @@ package grpcserver
 
 import (
 	"context"
+	"errors"
 
 	pb "github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/product/params"
+	"github.com/elangreza/e-commerce/product/pkg/errs"
+	status "google.golang.org/grpc/status"
 )
 
 type (
@@ -65,6 +68,9 @@ func (s *ProductServer) GetProduct(ctx context.Context, req *pb.GetProductReques
 		ProductID: req.GetId(),
 	})
 	if err != nil {
+		if errors.Is(err, errs.NotFound{}) {
+			return nil, status.Error(errs.NotFound{}.GrpcCode(), err.Error())
+		}
 		return nil, err
 	}
 
