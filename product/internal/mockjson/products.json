@@ -1,0 +1,114 @@
+[
+    {
+        "id": "0198a7e8-5e30-7650-9a65-60eda251b9a2",
+        "name": "laptop",
+        "description": "A portable personal computer.",
+        "price": 999,
+        "image_url": "http://example.com/laptop.png"
+    },
+    {
+        "id": "0198a7e8-5e30-714d-9a1d-b198f451f59c",
+        "name": "smartphone",
+        "description": "A handheld device that combines mobile phone and computing functions.",
+        "price": 699,
+        "image_url": "http://example.com/smartphone.png"
+    },
+    {
+        "id": "0198a7e8-5e30-77f3-889e-1258ca584d70",
+        "name": "tablet",
+        "description": "A mobile device with a touchscreen display, larger than a smartphone.",
+        "price": 499,
+        "image_url": "http://example.com/tablet.png"
+    },
+    {
+        "id": "0198a7e8-5e30-77f6-ab79-b5df69196594",
+        "name": "smartwatch",
+        "description": "A wearable device that offers smart features like notifications and health tracking.",
+        "price": 199,
+        "image_url": "http://example.com/smartwatch.png"
+    },
+    {
+        "id": "0198a7e8-5e30-753f-b02b-a3b5e8297188",
+        "name": "headphones",
+        "description": "A pair of speakers worn on or over the ears for listening to audio.",
+        "price": 149,
+        "image_url": "http://example.com/headphones.png"
+    },
+    {
+        "id": "0198a7e8-5e30-744a-82be-e4d1e38a9f2a",
+        "name": "smart speaker",
+        "description": "A wireless speaker with voice control capabilities.",
+        "price": 99,
+        "image_url": "http://example.com/smart_speaker.png"
+    },
+    {
+        "id": "0198a7e8-5e30-7f26-aee3-eab3eff287a8",
+        "name": "gaming console",
+        "description": "A device designed primarily for playing video games.",
+        "price": 299,
+        "image_url": "http://example.com/gaming_console.png"
+    },
+    {
+        "id": "0198a7e8-5e30-724e-8be6-e26d1aebb108",
+        "name": "4K TV",
+        "description": "A television with a resolution of 3840 x 2160 pixels.",
+        "price": 799,
+        "image_url": "http://example.com/4k_tv.png"
+    },
+    {
+        "id": "0198a7e8-5e30-774a-a6f5-6b0844bf1d2c",
+        "name": "wireless mouse",
+        "description": "A battery-operated pointing device that connects wirelessly to a computer.",
+        "price": 49,
+        "image_url": "http://example.com/wireless_mouse.png"
+    },
+    {
+        "id": "0198a7e8-5e30-7d40-be21-c1e264b35fe9",
+        "name": "external hard drive",
+        "description": "A portable storage device used to store and back up data.",
+        "price": 89,
+        "image_url": "http://example.com/external_hard_drive.png"
+    },
+    {
+        "id": "0198a7e8-5e30-7e6f-875f-de0c4be44656",
+        "name": "webcam",
+        "description": "A camera that connects to a computer to stream video or take photos.",
+        "price": 59,
+        "image_url": "http://example.com/webcam.png"
+    },
+    {
+        "id": "0198a7e8-5e30-77cd-9c97-1e408af43441",
+        "name": "Bluetooth speaker",
+        "description": "A portable speaker that connects to devices via Bluetooth for audio playback.",
+        "price": 79,
+        "image_url": "http://example.com/bluetooth_speaker.png"
+    },
+    {
+        "id": "0198a7e8-5e30-7f2f-a54f-2ecc5abd380a",
+        "name": "VR headset",
+        "description": "A device worn on the head that provides immersive virtual reality experiences.",
+        "price": 399,
+        "image_url": "http://example.com/vr_headset.png"
+    },
+    {
+        "id": "0198a7e8-5e30-7f66-95c3-34957376ec74",
+        "name": "digital camera",
+        "description": "A camera that captures photographs in digital format.",
+        "price": 599,
+        "image_url": "http://example.com/digital_camera.png"
+    },
+    {
+        "id": "0198a7e8-5e30-7616-9d6d-30913487dac7",
+        "name": "smart thermostat",
+        "description": "A device that allows you to control your home's heating and cooling remotely.",
+        "price": 129,
+        "image_url": "http://example.com/smart_thermostat.png"
+    },
+    {
+        "id": "0198a7e8-5e30-7269-9207-45cfe3c61b6d",
+        "name": "robot vacuum",
+        "description": "An autonomous vacuum cleaner that can navigate and clean floors on its own.",
+        "price": 249,
+        "image_url": "http://example.com/robot_vacuum.png"
+    }
+]
