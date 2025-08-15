@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package gen;
+
+option go_package = "github.com/elangreza/e-commerce/proto/gen";
+
+message Stock {
+    string id = 1;
+    string product_id = 2;
+    int32 quantity = 3;
+}
+
+message GetStockRequest {
+    string id = 1;
+}
+
+message ListStocksRequest {
+    string query = 1;
+    int64 limit = 2;
+    int64 page = 3;
+}
+
+message ListStocksResponse {
+    repeated Stock stocks = 1;
+}
+
+message ReserveStockRequest {
+    string product_id = 1;
+    int32 quantity = 2;
+}
+
+message ReserveStockResponse {
+    string id = 1;
+    string product_id = 2;
+    int32 reserved_quantity = 3;
+}
+
+message ReleaseStockRequest {
+    string id = 1;
+}
+
+message ReleaseStockResponse {
+    string id = 1;
+    string product_id = 2;
+    int32 released_quantity = 3;
+}
+
+service StockService {
+    rpc GetStock(GetStockRequest) returns (Stock) {}
+    rpc ListStocks(ListStocksRequest) returns (ListStocksResponse) {}
+    rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse) {}
+    rpc ReleaseStock(ReleaseStockRequest) returns (ReleaseStockResponse) {}
+}

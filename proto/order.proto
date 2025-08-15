@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package gen;
+
+option go_package = "github.com/elangreza/e-commerce/proto/gen";
+
+
+message UpsertCartRequest {
+    string user_id = 1;
+    CartItem items = 2;
+}   
+
+message UpsertCartResponse {
+    string id = 1;
+}
+
+message CartItem {
+    string product_id = 1;
+    int32 quantity = 2;
+}
+
+// decrease cart item one by one
+message DecreaseCartItemRequest {
+    string user_id = 1;
+    string cart_id = 2;
+    string product_id = 3;
+}
+
+// add cart item one by one
+message AddCartItemRequest {
+    string user_id = 1;
+    string cart_id = 2;
+    string product_id = 3;
+}
+
+message Empty {}
+
+// this service contains all the methods related to checkout and order management
+service CheckoutService {
+    rpc UpsertCart(UpsertCartRequest) returns (UpsertCartResponse) {}
+    rpc DecreaseCartItem(DecreaseCartItemRequest) returns (Empty) {}
+}

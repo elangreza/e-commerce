@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package gen;
+
+option go_package = "github.com/elangreza/e-commerce/proto/gen";
+
+service ProductService {
+    rpc ListProducts(ListProductsRequest) returns (ListProductsResponse) {}
+    rpc GetProduct(GetProductRequest) returns (Product) {}
+}
+
+message Product {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string picture = 4;
+    double price = 5;
+}
+
+message ListProductsResponse {
+    repeated Product products = 1;
+    int64 total = 2;
+    int64 total_pages = 3;
+}
+
+message GetProductRequest {
+    string id = 1;
+}
+
+message ListProductsRequest {
+    string search = 1;
+    int64 limit = 2;
+    int64 page = 3;
+    string sort_by = 4;
+}
+
