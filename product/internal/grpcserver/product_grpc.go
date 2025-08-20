@@ -40,7 +40,7 @@ func (s *ProductServer) ListProducts(ctx context.Context, req *pb.ListProductsRe
 		SortBy: req.GetSortBy(),
 	}
 
-	if err := reqParams.Validate("updated_at"); err != nil {
+	if err := reqParams.Validate("updated_at", "name", "price"); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 

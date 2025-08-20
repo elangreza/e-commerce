@@ -1,7 +1,7 @@
 package params
 
 import (
-	"errors"
+	"fmt"
 	"slices"
 )
 
