@@ -33,7 +33,7 @@ func NewProductServer(productService productService) *ProductServer {
 }
 
 func (s *ProductServer) ListProducts(ctx context.Context, req *pb.ListProductsRequest) (*pb.ListProductsResponse, error) {
-	reqParams := &params.PaginationRequest{
+	reqParams := params.PaginationRequest{
 		Search: req.GetSearch(),
 		Page:   req.GetPage(),
 		Limit:  req.GetLimit(),
