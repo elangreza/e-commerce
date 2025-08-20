@@ -30,7 +30,7 @@ func (r *PaginationRequest) Validate(sorts ...string) error {
 
 	if len(sorts) > 0 {
 		if r.SortBy != "" && !slices.Contains(sorts, r.SortBy) {
-			return errors.New("unknown sort")
+			return fmt.Errorf("invalid sort field: %q; expected one of %v", r.SortBy, sorts)
 		}
 
 		if r.SortBy == "" {
