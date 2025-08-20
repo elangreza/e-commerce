@@ -1,5 +1,8 @@
 package grpcserver
 
+// go generate
+//go:generate mockgen -source=product_grpc.go -destination=./mock/mock_product_grpc.go -package=mock
+
 import (
 	"context"
 	"errors"
@@ -7,12 +10,13 @@ import (
 	pb "github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/product/params"
 	"github.com/elangreza/e-commerce/product/pkg/errs"
+	"google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 )
 
 type (
 	productService interface {
-		ListProducts(ctx context.Context, req params.ListProductsRequest) (*params.ListProductsResponse, error)
+		ListProducts(ctx context.Context, req params.PaginationRequest) (*params.ListProductsResponse, error)
 		GetProduct(ctx context.Context, req params.GetProductRequest) (*params.GetProductResponse, error)
 	}
 
@@ -29,20 +33,20 @@ func NewProductServer(productService productService) *ProductServer {
 }
 
 func (s *ProductServer) ListProducts(ctx context.Context, req *pb.ListProductsRequest) (*pb.ListProductsResponse, error) {
-	reqParams := params.ListProductsRequest{
+	reqParams := &params.PaginationRequest{
 		Search: req.GetSearch(),
 		Page:   req.GetPage(),
 		Limit:  req.GetLimit(),
 		SortBy: req.GetSortBy(),
 	}
 
-	if err := reqParams.Validate(); err != nil {
-		return nil, err
+	if err := reqParams.Validate("updated_at"); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	products, err := s.productService.ListProducts(ctx, reqParams)
+	products, err := s.productService.ListProducts(ctx, *reqParams)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	productResponses := make([]*pb.Product, len(products.Products))
@@ -71,7 +75,7 @@ func (s *ProductServer) GetProduct(ctx context.Context, req *pb.GetProductReques
 		if errors.Is(err, errs.NotFound{}) {
 			return nil, status.Error(errs.NotFound{}.GrpcCode(), err.Error())
 		}
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.Product{

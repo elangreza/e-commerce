@@ -22,14 +22,14 @@ func Test_productService_ListProducts(t *testing.T) {
 	// table test driven approach
 	tests := []struct {
 		name     string
-		req      params.ListProductsRequest
+		req      params.PaginationRequest
 		want     *params.ListProductsResponse
 		wantErr  bool
 		funcMock func(m *mock.MockproductRepo)
 	}{
 		{
 			name: "List Products Success",
-			req: params.ListProductsRequest{
+			req: params.PaginationRequest{
 				Search: "test",
 				Page:   1,
 				Limit:  10,
@@ -75,7 +75,7 @@ func Test_productService_ListProducts(t *testing.T) {
 		},
 		{
 			name: "Error when getting products",
-			req: params.ListProductsRequest{
+			req: params.PaginationRequest{
 				Search: "error",
 				Page:   1,
 				Limit:  10,
@@ -94,7 +94,7 @@ func Test_productService_ListProducts(t *testing.T) {
 		},
 		{
 			name: "Error when getting total products",
-			req: params.ListProductsRequest{
+			req: params.PaginationRequest{
 				Search: "error",
 				Page:   1,
 				Limit:  10,

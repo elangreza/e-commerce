@@ -32,7 +32,7 @@ type productService struct {
 	productRepo productRepo
 }
 
-func (s *productService) ListProducts(ctx context.Context, req params.ListProductsRequest) (*params.ListProductsResponse, error) {
+func (s *productService) ListProducts(ctx context.Context, req params.PaginationRequest) (*params.ListProductsResponse, error) {
 	// Implementation for listing products
 	reqParams := entity.ListProductRequest{
 		Search: req.Search,
