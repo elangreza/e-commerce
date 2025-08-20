@@ -1,5 +1,10 @@
 package params
 
+import (
+	"fmt"
+	"slices"
+)
+
 type ProductResponse struct {
 	ID          string  `json:"id"`
 	Name        string  `json:"name"`
@@ -8,23 +13,31 @@ type ProductResponse struct {
 	Picture     string  `json:"image_url"`
 }
 
-type ListProductsRequest struct {
+type PaginationRequest struct {
 	Search string `json:"search"`
 	Page   int64  `json:"page"`
 	Limit  int64  `json:"limit"`
 	SortBy string `json:"sort_by"`
 }
 
-func (r *ListProductsRequest) Validate() error {
+func (r *PaginationRequest) Validate(sorts ...string) error {
 	if r.Page < 1 {
 		r.Page = 1
 	}
 	if r.Limit < 1 {
 		r.Limit = 10
 	}
-	if r.SortBy == "" {
-		r.SortBy = "updated_at"
+
+	if len(sorts) > 0 {
+		if r.SortBy != "" && !slices.Contains(sorts, r.SortBy) {
+			return fmt.Errorf("invalid sort field: %q; expected one of %v", r.SortBy, sorts)
+		}
+
+		if r.SortBy == "" {
+			r.SortBy = sorts[0]
+		}
 	}
+
 	return nil
 }
 

@@ -19,11 +19,11 @@ func (e NotFound) Error() string {
 }
 
 // http error code
-func (e *NotFound) HttpCode() int {
+func (e NotFound) HttpCode() int {
 	return http.StatusNotFound
 }
 
 // grpc error code
-func (e *NotFound) GrpcCode() codes.Code {
+func (e NotFound) GrpcCode() codes.Code {
 	return codes.NotFound
 }
