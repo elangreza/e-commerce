@@ -38,10 +38,6 @@ func (r *PaginationRequest) Validate(sorts ...string) error {
 		}
 	}
 
-	if r.SortBy == "" {
-		r.SortBy = sorts[0]
-	}
-
 	return nil
 }
 

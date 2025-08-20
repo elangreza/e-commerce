@@ -72,7 +72,6 @@ func (s *ProductServer) GetProduct(ctx context.Context, req *pb.GetProductReques
 		ProductID: req.GetId(),
 	})
 	if err != nil {
-		if errors.Is(err, errs.NotFound{}) {
 		var notFoundErr errs.NotFound
 		if errors.As(err, &notFoundErr) {
 			return nil, status.Error(notFoundErr.GrpcCode(), err.Error())
