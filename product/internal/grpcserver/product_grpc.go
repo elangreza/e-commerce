@@ -44,7 +44,7 @@ func (s *ProductServer) ListProducts(ctx context.Context, req *pb.ListProductsRe
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	products, err := s.productService.ListProducts(ctx, *reqParams)
+	products, err := s.productService.ListProducts(ctx, reqParams)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
