@@ -13,7 +13,7 @@ message Product {
     string id = 1;
     string name = 2;
     string description = 3;
-    string picture = 4;
+    string image_url = 4;
     double price = 5;
 }
 

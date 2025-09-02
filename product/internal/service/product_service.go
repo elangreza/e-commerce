@@ -9,7 +9,7 @@ import (
 
 	"github.com/elangreza/e-commerce/product/internal/entity"
 	"github.com/elangreza/e-commerce/product/internal/mockjson"
-	params "github.com/elangreza/e-commerce/product/params"
+	params "github.com/elangreza/e-commerce/product/internal/params"
 	"github.com/elangreza/e-commerce/product/pkg/errs"
 	"github.com/google/uuid"
 )
@@ -32,14 +32,15 @@ type productService struct {
 	productRepo productRepo
 }
 
-func (s *productService) ListProducts(ctx context.Context, req params.PaginationRequest) (*params.ListProductsResponse, error) {
+func (s *productService) ListProducts(ctx context.Context, req params.PaginationParams) (*params.ListProductsResponse, error) {
 	// Implementation for listing products
 	reqParams := entity.ListProductRequest{
-		Search: req.Search,
-		Page:   req.Page,
-		Limit:  req.Limit,
-		SortBy: req.SortBy,
+		Search:      req.Search,
+		Page:        req.Page,
+		Limit:       req.Limit,
+		OrderClause: req.GetOrderClause(),
 	}
+
 	products, err := s.productRepo.ListProducts(ctx, reqParams)
 	if err != nil {
 		return nil, err
@@ -52,7 +53,7 @@ func (s *productService) ListProducts(ctx context.Context, req params.Pagination
 			Name:        product.Name,
 			Description: product.Description,
 			Price:       product.Price,
-			Picture:     product.Picture,
+			ImageUrl:    product.ImageUrl,
 		}
 	}
 
@@ -61,15 +62,10 @@ func (s *productService) ListProducts(ctx context.Context, req params.Pagination
 		return nil, err
 	}
 
-	totalPages := total / reqParams.Limit
-	if total%req.Limit != 0 {
-		totalPages++
-	}
-
 	return &params.ListProductsResponse{
 		Products:   productResponses,
 		Total:      total,
-		TotalPages: totalPages,
+		TotalPages: req.GetTotalPages(total),
 	}, nil
 }
 
@@ -94,7 +90,7 @@ func (s *productService) GetProduct(ctx context.Context, req params.GetProductRe
 			Name:        product.Name,
 			Description: product.Description,
 			Price:       product.Price,
-			Picture:     product.Picture,
+			ImageUrl:    product.ImageUrl,
 		},
 	}, nil
 }

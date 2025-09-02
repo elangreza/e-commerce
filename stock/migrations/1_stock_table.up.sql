@@ -1,0 +1,7 @@
+CREATE TABLE stocks (
+    product_id TEXT PRIMARY KEY,
+    quantity INTEGER NOT NULL CHECK (quantity >= 0),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github/elangreza/e-commerce/pkg/dbsql"
 	"log"
 	"net"
 
@@ -17,7 +18,16 @@ func main() {
 	// implement this later
 	// github.com/samber/slog-zap
 
+	db, err := dbsql.NewDbSql(
+		dbsql.WithSqliteDB("product.db"),
+		dbsql.WithSqliteDBWalMode(),
+		dbsql.WithAutoMigrate("file://./migrations"),
+	)
+	errChecker(err)
+	defer db.Close()
+
 	productRepo, err := mockjson.LoadProductJson()
+	// productRepo, err := sqlitedb.NewProductRepository()
 	errChecker(err)
 
 	productService := service.NewProductService(productRepo)
@@ -37,6 +47,6 @@ func main() {
 
 func errChecker(err error) {
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

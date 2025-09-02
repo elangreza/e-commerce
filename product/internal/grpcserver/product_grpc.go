@@ -6,9 +6,10 @@ package grpcserver
 import (
 	"context"
 	"errors"
+	"strings"
 
-	pb "github.com/elangreza/e-commerce/gen"
-	"github.com/elangreza/e-commerce/product/params"
+	"github.com/elangreza/e-commerce/gen"
+	"github.com/elangreza/e-commerce/product/internal/params"
 	"github.com/elangreza/e-commerce/product/pkg/errs"
 	"google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -16,13 +17,13 @@ import (
 
 type (
 	productService interface {
-		ListProducts(ctx context.Context, req params.PaginationRequest) (*params.ListProductsResponse, error)
+		ListProducts(ctx context.Context, req params.PaginationParams) (*params.ListProductsResponse, error)
 		GetProduct(ctx context.Context, req params.GetProductRequest) (*params.GetProductResponse, error)
 	}
 
 	ProductServer struct {
 		productService productService
-		pb.UnimplementedProductServiceServer
+		gen.UnimplementedProductServiceServer
 	}
 )
 
@@ -32,42 +33,44 @@ func NewProductServer(productService productService) *ProductServer {
 	}
 }
 
-func (s *ProductServer) ListProducts(ctx context.Context, req *pb.ListProductsRequest) (*pb.ListProductsResponse, error) {
-	reqParams := params.PaginationRequest{
+func (s *ProductServer) ListProducts(ctx context.Context, req *gen.ListProductsRequest) (*gen.ListProductsResponse, error) {
+	paginationParams := params.PaginationParams{
+		Sorts:  strings.Split(req.GetSortBy(), ","),
 		Search: req.GetSearch(),
-		Page:   req.GetPage(),
 		Limit:  req.GetLimit(),
-		SortBy: req.GetSortBy(),
+		Page:   req.GetPage(),
 	}
 
-	if err := reqParams.Validate("updated_at", "name", "price"); err != nil {
+	paginationParams.SetValidSortKey("updated_at", "name", "price")
+
+	if err := paginationParams.Validate(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	products, err := s.productService.ListProducts(ctx, reqParams)
+	products, err := s.productService.ListProducts(ctx, paginationParams)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	productResponses := make([]*pb.Product, len(products.Products))
+	productResponses := make([]*gen.Product, len(products.Products))
 	for i, product := range products.Products {
-		productResponses[i] = &pb.Product{
+		productResponses[i] = &gen.Product{
 			Id:          product.ID,
 			Name:        product.Name,
 			Description: product.Description,
 			Price:       product.Price,
-			Picture:     product.Picture,
+			ImageUrl:    product.ImageUrl,
 		}
 	}
 
-	return &pb.ListProductsResponse{
+	return &gen.ListProductsResponse{
 		Products:   productResponses,
 		Total:      products.Total,
 		TotalPages: products.TotalPages,
 	}, nil
 }
 
-func (s *ProductServer) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.Product, error) {
+func (s *ProductServer) GetProduct(ctx context.Context, req *gen.GetProductRequest) (*gen.Product, error) {
 	response, err := s.productService.GetProduct(ctx, params.GetProductRequest{
 		ProductID: req.GetId(),
 	})
@@ -79,11 +82,11 @@ func (s *ProductServer) GetProduct(ctx context.Context, req *pb.GetProductReques
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.Product{
+	return &gen.Product{
 		Id:          response.Product.ID,
 		Name:        response.Product.Name,
 		Description: response.Product.Description,
 		Price:       response.Product.Price,
-		Picture:     response.Product.Picture,
+		ImageUrl:    response.Product.ImageUrl,
 	}, nil
 }
