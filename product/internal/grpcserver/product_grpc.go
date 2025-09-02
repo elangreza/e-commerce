@@ -88,5 +88,6 @@ func (s *ProductServer) GetProduct(ctx context.Context, req *gen.GetProductReque
 		Description: response.Product.Description,
 		Price:       response.Product.Price,
 		ImageUrl:    response.Product.ImageUrl,
+		Stock:       response.Product.Stock,
 	}, nil
 }

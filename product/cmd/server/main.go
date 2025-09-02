@@ -7,9 +7,10 @@ import (
 	"net"
 
 	"github.com/elangreza/e-commerce/gen"
+	"github.com/elangreza/e-commerce/product/internal/client"
 	"github.com/elangreza/e-commerce/product/internal/grpcserver"
-	"github.com/elangreza/e-commerce/product/internal/mockjson"
 	"github.com/elangreza/e-commerce/product/internal/service"
+	"github.com/elangreza/e-commerce/product/internal/sqlitedb"
 	"google.golang.org/grpc"
 )
 
@@ -26,11 +27,12 @@ func main() {
 	errChecker(err)
 	defer db.Close()
 
-	productRepo, err := mockjson.LoadProductJson()
-	// productRepo, err := sqlitedb.NewProductRepository()
+	// productRepo, err := mockjson.LoadProductJson()
+	productRepo := sqlitedb.NewProductRepository(db)
+	stockClient, err := client.NewStockClient()
 	errChecker(err)
 
-	productService := service.NewProductService(productRepo)
+	productService := service.NewProductService(productRepo, stockClient)
 	productServer := grpcserver.NewProductServer(productService)
 
 	address := fmt.Sprintf(":%v", 50051)

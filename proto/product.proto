@@ -15,6 +15,7 @@ message Product {
     string description = 3;
     string image_url = 4;
     double price = 5;
+    int64 stock = 6;
 }
 
 message ListProductsResponse {

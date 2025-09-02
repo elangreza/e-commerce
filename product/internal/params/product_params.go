@@ -6,6 +6,7 @@ type ProductResponse struct {
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
 	ImageUrl    string  `json:"image_url"`
+	Stock       int64   `json:"stock"`
 }
 
 type ListProductsResponse struct {

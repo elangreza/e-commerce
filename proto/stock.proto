@@ -7,7 +7,7 @@ option go_package = "github.com/elangreza/e-commerce/proto/gen";
 message Stock {
     string id = 1;
     string product_id = 2;
-    int32 quantity = 3;
+    int64 quantity = 3;
 }
 
 message StockList {
@@ -30,12 +30,12 @@ message ListStocksResponse {
 
 message ReserveStockRequest {
     string product_id = 1;
-    int32 quantity = 2;
+    int64 quantity = 2;
 }
 
 message ReserveStockResponse {
     string product_id = 2;
-    int32 reserved_quantity = 3;
+    int64 reserved_quantity = 3;
 }
 
 message ReleaseStockRequest {
@@ -45,7 +45,7 @@ message ReleaseStockRequest {
 message ReleaseStockResponse {
     string id = 1;
     string product_id = 2;
-    int32 released_quantity = 3;
+    int64 released_quantity = 3;
 }
 
 service StockService {

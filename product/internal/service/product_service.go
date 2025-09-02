@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/elangreza/e-commerce/product/internal/entity"
 	"github.com/elangreza/e-commerce/product/internal/mockjson"
@@ -20,16 +21,22 @@ type (
 		TotalProducts(ctx context.Context, req entity.ListProductRequest) (int64, error)
 		GetProductByID(ctx context.Context, ID uuid.UUID) (*entity.Product, error)
 	}
+
+	stockServiceClient interface {
+		GetStocks(ctx context.Context, productIds []string) ([]entity.Stock, error)
+	}
 )
 
-func NewProductService(productRepo productRepo) *productService {
+func NewProductService(productRepo productRepo, stockServiceClient stockServiceClient) *productService {
 	return &productService{
-		productRepo: productRepo,
+		productRepo:        productRepo,
+		stockServiceClient: stockServiceClient,
 	}
 }
 
 type productService struct {
-	productRepo productRepo
+	productRepo        productRepo
+	stockServiceClient stockServiceClient
 }
 
 func (s *productService) ListProducts(ctx context.Context, req params.PaginationParams) (*params.ListProductsResponse, error) {
@@ -62,6 +69,8 @@ func (s *productService) ListProducts(ctx context.Context, req params.Pagination
 		return nil, err
 	}
 
+	fmt.Println("test")
+
 	return &params.ListProductsResponse{
 		Products:   productResponses,
 		Total:      total,
@@ -84,6 +93,18 @@ func (s *productService) GetProduct(ctx context.Context, req params.GetProductRe
 		return nil, err
 	}
 
+	stock, err := s.stockServiceClient.GetStocks(ctx, []string{product.ID.String()})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(stock) == 0 {
+		stock = append(stock, entity.Stock{
+			ProductID: product.ID.String(),
+			Quantity:  0,
+		})
+	}
+
 	return &params.GetProductResponse{
 		Product: &params.ProductResponse{
 			ID:          product.ID.String(), // Convert UUID to string
@@ -91,6 +112,7 @@ func (s *productService) GetProduct(ctx context.Context, req params.GetProductRe
 			Description: product.Description,
 			Price:       product.Price,
 			ImageUrl:    product.ImageUrl,
+			Stock:       stock[0].Quantity,
 		},
 	}, nil
 }
