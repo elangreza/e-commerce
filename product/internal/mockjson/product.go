@@ -40,9 +40,9 @@ func (pm *ProductMock) ListProducts(ctx context.Context, req entity.ListProductR
 
 	var filteredProducts = pm.filteredProducts(pm.products, req.Search)
 
-	if req.SortBy == "" {
+	if req.OrderClause == "" {
 		sort.Slice(filteredProducts, func(i, j int) bool {
-			switch req.SortBy {
+			switch req.OrderClause {
 			case "name":
 				return filteredProducts[i].Name < filteredProducts[j].Name
 			case "price":

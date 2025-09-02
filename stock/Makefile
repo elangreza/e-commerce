@@ -6,7 +6,7 @@ gen:
 	go generate ./...
 
 seed:
-	sqlite3 product.db < migrations/seed/seed.sql
+	sqlite3 stock.db < migrations/seed/seed.sql
 
 .PHONY: run gen seed
 .DEFAULT_GOAL := run

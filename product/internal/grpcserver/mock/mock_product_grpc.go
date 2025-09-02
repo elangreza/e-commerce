@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	params "github.com/elangreza/e-commerce/product/params"
+	params "github.com/elangreza/e-commerce/product/internal/params"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -57,7 +57,7 @@ func (mr *MockproductServiceMockRecorder) GetProduct(ctx, req any) *gomock.Call 
 }
 
 // ListProducts mocks base method.
-func (m *MockproductService) ListProducts(ctx context.Context, req params.PaginationRequest) (*params.ListProductsResponse, error) {
+func (m *MockproductService) ListProducts(ctx context.Context, req params.PaginationParams) (*params.ListProductsResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListProducts", ctx, req)
 	ret0, _ := ret[0].(*params.ListProductsResponse)

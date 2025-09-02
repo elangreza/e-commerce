@@ -10,8 +10,12 @@ message Stock {
     int32 quantity = 3;
 }
 
+message StockList {
+    repeated Stock stocks = 1;
+}
+
 message GetStockRequest {
-    string id = 1;
+    repeated string product_ids = 1;
 }
 
 message ListStocksRequest {
@@ -30,13 +34,12 @@ message ReserveStockRequest {
 }
 
 message ReserveStockResponse {
-    string id = 1;
     string product_id = 2;
     int32 reserved_quantity = 3;
 }
 
 message ReleaseStockRequest {
-    string id = 1;
+    string product_id = 1;
 }
 
 message ReleaseStockResponse {
@@ -46,7 +49,7 @@ message ReleaseStockResponse {
 }
 
 service StockService {
-    rpc GetStock(GetStockRequest) returns (Stock) {}
+    rpc GetStocks(GetStockRequest) returns (StockList) {}
     rpc ListStocks(ListStocksRequest) returns (ListStocksResponse) {}
     rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse) {}
     rpc ReleaseStock(ReleaseStockRequest) returns (ReleaseStockResponse) {}
