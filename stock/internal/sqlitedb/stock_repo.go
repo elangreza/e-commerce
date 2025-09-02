@@ -25,8 +25,11 @@ func (r *StockRepo) GetStocks(ctx context.Context, productIDs []string) ([]*enti
 	placeholders := strings.Repeat("?,", len(productIDs))
 	placeholders = strings.TrimRight(placeholders, ",")
 	query := fmt.Sprintf(`SELECT product_id, quantity FROM stocks WHERE product_id IN (%s)`, placeholders)
-
-	rows, err := r.db.QueryContext(ctx, query, productIDs)
+	args := make([]any, len(productIDs))
+	for i, id := range productIDs {
+		args[i] = id
+	}
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
