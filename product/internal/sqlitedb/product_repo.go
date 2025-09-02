@@ -30,7 +30,7 @@ func (pm *ProductRepository) ListProducts(ctx context.Context, req entity.ListPr
 		updated_at
 	from products
 	where
-		(title LIKE '%' || ? || '%' OR ? IS NULL)
+		(name LIKE '%' || ? || '%' OR ? IS NULL)
 	order by ` + req.OrderClause + ` LIMIT ? OFFSET ?`
 	offset := (req.Page - 1) * req.Limit
 
@@ -54,7 +54,7 @@ func (pm *ProductRepository) ListProducts(ctx context.Context, req entity.ListPr
 func (pm *ProductRepository) TotalProducts(ctx context.Context, req entity.ListProductRequest) (int64, error) {
 	q := `select count(*) from products
 	where
-		(title LIKE '%' || ? || '%' OR ? IS NULL)`
+		(name LIKE '%' || ? || '%' OR ? IS NULL)`
 	var total int64
 	if err := pm.db.QueryRowContext(ctx, q, req.Search, req.Search).Scan(&total); err != nil {
 		return 0, err
