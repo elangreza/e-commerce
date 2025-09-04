@@ -21,7 +21,6 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type Stock struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	ProductId            string   `protobuf:"bytes,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	Quantity             int64    `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -53,13 +52,6 @@ func (m *Stock) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_Stock proto.InternalMessageInfo
-
-func (m *Stock) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
 
 func (m *Stock) GetProductId() string {
 	if m != nil {
@@ -153,103 +145,8 @@ func (m *GetStockRequest) GetProductIds() []string {
 	return nil
 }
 
-type ListStocksRequest struct {
-	Query                string   `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	Limit                int64    `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Page                 int64    `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *ListStocksRequest) Reset()         { *m = ListStocksRequest{} }
-func (m *ListStocksRequest) String() string { return proto.CompactTextString(m) }
-func (*ListStocksRequest) ProtoMessage()    {}
-func (*ListStocksRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c87a7814fbd674bd, []int{3}
-}
-
-func (m *ListStocksRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ListStocksRequest.Unmarshal(m, b)
-}
-func (m *ListStocksRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ListStocksRequest.Marshal(b, m, deterministic)
-}
-func (m *ListStocksRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListStocksRequest.Merge(m, src)
-}
-func (m *ListStocksRequest) XXX_Size() int {
-	return xxx_messageInfo_ListStocksRequest.Size(m)
-}
-func (m *ListStocksRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListStocksRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ListStocksRequest proto.InternalMessageInfo
-
-func (m *ListStocksRequest) GetQuery() string {
-	if m != nil {
-		return m.Query
-	}
-	return ""
-}
-
-func (m *ListStocksRequest) GetLimit() int64 {
-	if m != nil {
-		return m.Limit
-	}
-	return 0
-}
-
-func (m *ListStocksRequest) GetPage() int64 {
-	if m != nil {
-		return m.Page
-	}
-	return 0
-}
-
-type ListStocksResponse struct {
-	Stocks               []*Stock `protobuf:"bytes,1,rep,name=stocks,proto3" json:"stocks,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *ListStocksResponse) Reset()         { *m = ListStocksResponse{} }
-func (m *ListStocksResponse) String() string { return proto.CompactTextString(m) }
-func (*ListStocksResponse) ProtoMessage()    {}
-func (*ListStocksResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c87a7814fbd674bd, []int{4}
-}
-
-func (m *ListStocksResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ListStocksResponse.Unmarshal(m, b)
-}
-func (m *ListStocksResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ListStocksResponse.Marshal(b, m, deterministic)
-}
-func (m *ListStocksResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListStocksResponse.Merge(m, src)
-}
-func (m *ListStocksResponse) XXX_Size() int {
-	return xxx_messageInfo_ListStocksResponse.Size(m)
-}
-func (m *ListStocksResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListStocksResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ListStocksResponse proto.InternalMessageInfo
-
-func (m *ListStocksResponse) GetStocks() []*Stock {
-	if m != nil {
-		return m.Stocks
-	}
-	return nil
-}
-
 type ReserveStockRequest struct {
-	ProductId            string   `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	Quantity             int64    `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	Stocks               []*Stock `protobuf:"bytes,1,rep,name=stocks,proto3" json:"stocks,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -259,7 +156,7 @@ func (m *ReserveStockRequest) Reset()         { *m = ReserveStockRequest{} }
 func (m *ReserveStockRequest) String() string { return proto.CompactTextString(m) }
 func (*ReserveStockRequest) ProtoMessage()    {}
 func (*ReserveStockRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c87a7814fbd674bd, []int{5}
+	return fileDescriptor_c87a7814fbd674bd, []int{3}
 }
 
 func (m *ReserveStockRequest) XXX_Unmarshal(b []byte) error {
@@ -280,23 +177,15 @@ func (m *ReserveStockRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ReserveStockRequest proto.InternalMessageInfo
 
-func (m *ReserveStockRequest) GetProductId() string {
+func (m *ReserveStockRequest) GetStocks() []*Stock {
 	if m != nil {
-		return m.ProductId
+		return m.Stocks
 	}
-	return ""
-}
-
-func (m *ReserveStockRequest) GetQuantity() int64 {
-	if m != nil {
-		return m.Quantity
-	}
-	return 0
+	return nil
 }
 
 type ReserveStockResponse struct {
-	ProductId            string   `protobuf:"bytes,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	ReservedQuantity     int64    `protobuf:"varint,3,opt,name=reserved_quantity,json=reservedQuantity,proto3" json:"reserved_quantity,omitempty"`
+	ReservedStockIds     []int64  `protobuf:"varint,1,rep,packed,name=reserved_stock_ids,json=reservedStockIds,proto3" json:"reserved_stock_ids,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -306,7 +195,7 @@ func (m *ReserveStockResponse) Reset()         { *m = ReserveStockResponse{} }
 func (m *ReserveStockResponse) String() string { return proto.CompactTextString(m) }
 func (*ReserveStockResponse) ProtoMessage()    {}
 func (*ReserveStockResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c87a7814fbd674bd, []int{6}
+	return fileDescriptor_c87a7814fbd674bd, []int{4}
 }
 
 func (m *ReserveStockResponse) XXX_Unmarshal(b []byte) error {
@@ -327,22 +216,15 @@ func (m *ReserveStockResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ReserveStockResponse proto.InternalMessageInfo
 
-func (m *ReserveStockResponse) GetProductId() string {
+func (m *ReserveStockResponse) GetReservedStockIds() []int64 {
 	if m != nil {
-		return m.ProductId
+		return m.ReservedStockIds
 	}
-	return ""
-}
-
-func (m *ReserveStockResponse) GetReservedQuantity() int64 {
-	if m != nil {
-		return m.ReservedQuantity
-	}
-	return 0
+	return nil
 }
 
 type ReleaseStockRequest struct {
-	ProductId            string   `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	ReservedStockIds     []int64  `protobuf:"varint,1,rep,packed,name=reserved_stock_ids,json=reservedStockIds,proto3" json:"reserved_stock_ids,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -352,7 +234,7 @@ func (m *ReleaseStockRequest) Reset()         { *m = ReleaseStockRequest{} }
 func (m *ReleaseStockRequest) String() string { return proto.CompactTextString(m) }
 func (*ReleaseStockRequest) ProtoMessage()    {}
 func (*ReleaseStockRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c87a7814fbd674bd, []int{7}
+	return fileDescriptor_c87a7814fbd674bd, []int{5}
 }
 
 func (m *ReleaseStockRequest) XXX_Unmarshal(b []byte) error {
@@ -373,17 +255,15 @@ func (m *ReleaseStockRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ReleaseStockRequest proto.InternalMessageInfo
 
-func (m *ReleaseStockRequest) GetProductId() string {
+func (m *ReleaseStockRequest) GetReservedStockIds() []int64 {
 	if m != nil {
-		return m.ProductId
+		return m.ReservedStockIds
 	}
-	return ""
+	return nil
 }
 
 type ReleaseStockResponse struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	ProductId            string   `protobuf:"bytes,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	ReleasedQuantity     int64    `protobuf:"varint,3,opt,name=released_quantity,json=releasedQuantity,proto3" json:"released_quantity,omitempty"`
+	ReleasedStockIds     []int64  `protobuf:"varint,1,rep,packed,name=released_stock_ids,json=releasedStockIds,proto3" json:"released_stock_ids,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -393,7 +273,7 @@ func (m *ReleaseStockResponse) Reset()         { *m = ReleaseStockResponse{} }
 func (m *ReleaseStockResponse) String() string { return proto.CompactTextString(m) }
 func (*ReleaseStockResponse) ProtoMessage()    {}
 func (*ReleaseStockResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c87a7814fbd674bd, []int{8}
+	return fileDescriptor_c87a7814fbd674bd, []int{6}
 }
 
 func (m *ReleaseStockResponse) XXX_Unmarshal(b []byte) error {
@@ -414,33 +294,17 @@ func (m *ReleaseStockResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ReleaseStockResponse proto.InternalMessageInfo
 
-func (m *ReleaseStockResponse) GetId() string {
+func (m *ReleaseStockResponse) GetReleasedStockIds() []int64 {
 	if m != nil {
-		return m.Id
+		return m.ReleasedStockIds
 	}
-	return ""
-}
-
-func (m *ReleaseStockResponse) GetProductId() string {
-	if m != nil {
-		return m.ProductId
-	}
-	return ""
-}
-
-func (m *ReleaseStockResponse) GetReleasedQuantity() int64 {
-	if m != nil {
-		return m.ReleasedQuantity
-	}
-	return 0
+	return nil
 }
 
 func init() {
 	proto.RegisterType((*Stock)(nil), "gen.Stock")
 	proto.RegisterType((*StockList)(nil), "gen.StockList")
 	proto.RegisterType((*GetStockRequest)(nil), "gen.GetStockRequest")
-	proto.RegisterType((*ListStocksRequest)(nil), "gen.ListStocksRequest")
-	proto.RegisterType((*ListStocksResponse)(nil), "gen.ListStocksResponse")
 	proto.RegisterType((*ReserveStockRequest)(nil), "gen.ReserveStockRequest")
 	proto.RegisterType((*ReserveStockResponse)(nil), "gen.ReserveStockResponse")
 	proto.RegisterType((*ReleaseStockRequest)(nil), "gen.ReleaseStockRequest")
@@ -450,32 +314,27 @@ func init() {
 func init() { proto.RegisterFile("stock.proto", fileDescriptor_c87a7814fbd674bd) }
 
 var fileDescriptor_c87a7814fbd674bd = []byte{
-	// 425 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x53, 0x4f, 0xeb, 0xd3, 0x40,
-	0x10, 0x6d, 0x12, 0x5b, 0xcc, 0xb4, 0x54, 0xbb, 0x16, 0x8d, 0x01, 0xb1, 0xec, 0xa9, 0x52, 0x4c,
-	0xa0, 0xf5, 0xe0, 0x4d, 0x10, 0x44, 0x04, 0x0f, 0x9a, 0xde, 0xbc, 0x94, 0x34, 0x19, 0xe2, 0x62,
-	0xf3, 0xa7, 0xbb, 0x9b, 0x42, 0xfd, 0x18, 0x7e, 0x62, 0xc9, 0xe6, 0x5f, 0xd3, 0x14, 0xfd, 0xf5,
-	0xb6, 0x33, 0x2f, 0xf3, 0xe6, 0xcd, 0xbc, 0x09, 0x8c, 0x85, 0x4c, 0x83, 0x5f, 0x4e, 0xc6, 0x53,
-	0x99, 0x12, 0x23, 0xc2, 0x84, 0x7a, 0x30, 0xdc, 0x16, 0x39, 0x32, 0x05, 0x9d, 0x85, 0x96, 0xb6,
-	0xd0, 0x96, 0xa6, 0xa7, 0xb3, 0x90, 0xbc, 0x02, 0xc8, 0x78, 0x1a, 0xe6, 0x81, 0xdc, 0xb1, 0xd0,
-	0xd2, 0x55, 0xde, 0xac, 0x32, 0x5f, 0x42, 0x62, 0xc3, 0xe3, 0x63, 0xee, 0x27, 0x92, 0xc9, 0xb3,
-	0x65, 0x2c, 0xb4, 0xa5, 0xe1, 0x35, 0x31, 0x75, 0xc1, 0x54, 0x9c, 0x5f, 0x99, 0x90, 0x84, 0xc2,
-	0x48, 0x35, 0x15, 0x96, 0xb6, 0x30, 0x96, 0xe3, 0x35, 0x38, 0x11, 0x26, 0x8e, 0xc2, 0xbd, 0x0a,
-	0xa1, 0x6b, 0x78, 0xf2, 0x19, 0x65, 0x99, 0xc3, 0x63, 0x8e, 0x42, 0x92, 0xd7, 0x30, 0x6e, 0xdb,
-	0x97, 0xb5, 0xa6, 0x07, 0x4d, 0x7f, 0x41, 0xb7, 0x30, 0x2b, 0xf8, 0x55, 0x91, 0xa8, 0xab, 0xe6,
-	0x30, 0x3c, 0xe6, 0xc8, 0xcf, 0xd5, 0x1c, 0x65, 0x50, 0x64, 0x0f, 0x2c, 0x66, 0x52, 0x4d, 0x61,
-	0x78, 0x65, 0x40, 0x08, 0x3c, 0xca, 0xfc, 0x08, 0x2b, 0xf5, 0xea, 0x4d, 0xdf, 0x03, 0xb9, 0x24,
-	0x15, 0x59, 0x9a, 0x08, 0x7c, 0xd0, 0x08, 0xdf, 0xe0, 0x99, 0x87, 0x02, 0xf9, 0x09, 0x3b, 0x63,
-	0x74, 0xb7, 0xa8, 0xfd, 0x6b, 0x8b, 0xfa, 0xd5, 0x16, 0xf7, 0x30, 0xef, 0x32, 0x56, 0x6a, 0xfe,
-	0x63, 0xcc, 0x0a, 0x66, 0xbc, 0x2c, 0x0b, 0x77, 0x57, 0x0e, 0x3d, 0xad, 0x81, 0xef, 0x75, 0x8f,
-	0x77, 0x85, 0xea, 0x03, 0xfa, 0xe2, 0x1e, 0xd5, 0x94, 0x17, 0xca, 0x2e, 0xab, 0x2a, 0x65, 0x77,
-	0x9e, 0x90, 0x52, 0xaa, 0x68, 0x6e, 0x29, 0x2d, 0x81, 0x5a, 0xe9, 0xfa, 0x8f, 0x0e, 0x13, 0xd5,
-	0x6d, 0x8b, 0xfc, 0xc4, 0x02, 0x24, 0x1b, 0x30, 0xeb, 0x9b, 0x11, 0x64, 0xae, 0x1c, 0xb9, 0xba,
-	0x21, 0x7b, 0xda, 0xfa, 0x54, 0xb8, 0x4a, 0x07, 0xe4, 0x03, 0x40, 0xeb, 0x2f, 0x79, 0xae, 0xf0,
-	0xde, 0x15, 0xd9, 0x2f, 0x7a, 0xf9, 0x72, 0x40, 0x3a, 0x20, 0x9f, 0x60, 0x72, 0x69, 0x0a, 0xb1,
-	0xd4, 0xa7, 0x37, 0x9c, 0xb7, 0x5f, 0xde, 0x40, 0xba, 0x34, 0xed, 0x06, 0x1b, 0x9a, 0x9e, 0x15,
-	0x0d, 0x4d, 0x7f, 0xdd, 0x74, 0xf0, 0x71, 0xf5, 0xe3, 0x4d, 0xc4, 0xe4, 0xcf, 0x7c, 0xef, 0x04,
-	0x69, 0xec, 0xe2, 0xc1, 0x4f, 0x22, 0x8e, 0xbf, 0x7d, 0x17, 0xdf, 0x06, 0x69, 0x1c, 0x23, 0x0f,
-	0xd0, 0x55, 0xbf, 0xba, 0x1b, 0x61, 0xb2, 0x1f, 0xa9, 0xe7, 0xe6, 0x6f, 0x00, 0x00, 0x00, 0xff,
-	0xff, 0xd5, 0x8c, 0xc7, 0x3a, 0x04, 0x04, 0x00, 0x00,
+	// 338 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x52, 0x41, 0x4f, 0xf2, 0x40,
+	0x14, 0xa4, 0x5f, 0xf3, 0x11, 0xfb, 0x20, 0x6a, 0x56, 0x0e, 0x95, 0xc4, 0x48, 0xf6, 0x84, 0x51,
+	0xdb, 0x04, 0x4e, 0x5e, 0x51, 0x63, 0x4c, 0x3c, 0x95, 0x9b, 0x17, 0x52, 0xb6, 0x2f, 0xb5, 0x11,
+	0x76, 0x61, 0x77, 0x4b, 0xa2, 0xff, 0xd2, 0x7f, 0x64, 0xfa, 0x4a, 0x0b, 0x08, 0x07, 0xbd, 0x75,
+	0x67, 0xf6, 0xcd, 0xcc, 0x9b, 0x2e, 0xb4, 0x8c, 0x55, 0xe2, 0x3d, 0x58, 0x68, 0x65, 0x15, 0x73,
+	0x53, 0x94, 0x7c, 0x04, 0xff, 0xc7, 0x05, 0xc6, 0x2e, 0x00, 0x16, 0x5a, 0x25, 0xb9, 0xb0, 0x93,
+	0x2c, 0xf1, 0xff, 0xf5, 0x9c, 0xbe, 0x17, 0x79, 0x6b, 0xe4, 0x39, 0x61, 0x5d, 0x38, 0x5a, 0xe6,
+	0xb1, 0xb4, 0x99, 0xfd, 0xf0, 0xdd, 0x9e, 0xd3, 0x77, 0xa3, 0xfa, 0xcc, 0x43, 0xf0, 0x48, 0xe3,
+	0x25, 0x33, 0x96, 0x71, 0x68, 0x92, 0x89, 0xf1, 0x9d, 0x9e, 0xdb, 0x6f, 0x0d, 0x20, 0x48, 0x51,
+	0x06, 0xc4, 0x47, 0x6b, 0x86, 0x0f, 0xe0, 0xe4, 0x09, 0x6d, 0x89, 0xe1, 0x32, 0x47, 0x63, 0xd9,
+	0x25, 0xb4, 0x36, 0xf6, 0xe5, 0xac, 0x17, 0x41, 0xed, 0x6f, 0xf8, 0x1d, 0x9c, 0x45, 0x68, 0x50,
+	0xaf, 0x70, 0x67, 0xee, 0x37, 0x76, 0x0f, 0xd0, 0xd9, 0x1d, 0x35, 0x0b, 0x25, 0x0d, 0xb2, 0x1b,
+	0x60, 0xba, 0xc4, 0x93, 0x09, 0x5d, 0xad, 0xad, 0xdd, 0xe8, 0xb4, 0x62, 0x68, 0xa4, 0x08, 0x70,
+	0x5f, 0x04, 0x98, 0x61, 0x6c, 0x76, 0x03, 0xfc, 0x4d, 0x84, 0xa2, 0x6c, 0x8b, 0x6c, 0x47, 0x21,
+	0xfc, 0xa0, 0x4a, 0xc9, 0x54, 0x2a, 0x83, 0x2f, 0x07, 0xda, 0x74, 0x18, 0xa3, 0x5e, 0x65, 0x02,
+	0xd9, 0x10, 0xbc, 0xaa, 0x50, 0xc3, 0x3a, 0x54, 0xc1, 0x8f, 0x82, 0xbb, 0xc7, 0x9b, 0x62, 0x8a,
+	0xff, 0xc4, 0x1b, 0xec, 0x11, 0xda, 0xdb, 0xb5, 0x30, 0x9f, 0x6e, 0x1c, 0x28, 0xb9, 0x7b, 0x7e,
+	0x80, 0x29, 0x83, 0x57, 0x32, 0x9b, 0x95, 0x6a, 0x99, 0xbd, 0xaa, 0x6a, 0x99, 0xfd, 0xfd, 0x79,
+	0x63, 0x74, 0xfd, 0x7a, 0x95, 0x66, 0xf6, 0x2d, 0x9f, 0x06, 0x42, 0xcd, 0x43, 0x9c, 0xc5, 0x32,
+	0xd5, 0xf8, 0x19, 0x87, 0x78, 0x2b, 0xd4, 0x7c, 0x8e, 0x5a, 0x60, 0x48, 0xcf, 0x36, 0x4c, 0x51,
+	0x4e, 0x9b, 0xf4, 0x39, 0xfc, 0x0e, 0x00, 0x00, 0xff, 0xff, 0xda, 0x45, 0xd4, 0x57, 0xd0, 0x02,
+	0x00, 0x00,
 }

@@ -20,7 +20,6 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	StockService_GetStocks_FullMethodName    = "/gen.StockService/GetStocks"
-	StockService_ListStocks_FullMethodName   = "/gen.StockService/ListStocks"
 	StockService_ReserveStock_FullMethodName = "/gen.StockService/ReserveStock"
 	StockService_ReleaseStock_FullMethodName = "/gen.StockService/ReleaseStock"
 )
@@ -30,7 +29,6 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StockServiceClient interface {
 	GetStocks(ctx context.Context, in *GetStockRequest, opts ...grpc.CallOption) (*StockList, error)
-	ListStocks(ctx context.Context, in *ListStocksRequest, opts ...grpc.CallOption) (*ListStocksResponse, error)
 	ReserveStock(ctx context.Context, in *ReserveStockRequest, opts ...grpc.CallOption) (*ReserveStockResponse, error)
 	ReleaseStock(ctx context.Context, in *ReleaseStockRequest, opts ...grpc.CallOption) (*ReleaseStockResponse, error)
 }
@@ -47,16 +45,6 @@ func (c *stockServiceClient) GetStocks(ctx context.Context, in *GetStockRequest,
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(StockList)
 	err := c.cc.Invoke(ctx, StockService_GetStocks_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *stockServiceClient) ListStocks(ctx context.Context, in *ListStocksRequest, opts ...grpc.CallOption) (*ListStocksResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListStocksResponse)
-	err := c.cc.Invoke(ctx, StockService_ListStocks_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +76,6 @@ func (c *stockServiceClient) ReleaseStock(ctx context.Context, in *ReleaseStockR
 // for forward compatibility.
 type StockServiceServer interface {
 	GetStocks(context.Context, *GetStockRequest) (*StockList, error)
-	ListStocks(context.Context, *ListStocksRequest) (*ListStocksResponse, error)
 	ReserveStock(context.Context, *ReserveStockRequest) (*ReserveStockResponse, error)
 	ReleaseStock(context.Context, *ReleaseStockRequest) (*ReleaseStockResponse, error)
 	mustEmbedUnimplementedStockServiceServer()
@@ -103,9 +90,6 @@ type UnimplementedStockServiceServer struct{}
 
 func (UnimplementedStockServiceServer) GetStocks(context.Context, *GetStockRequest) (*StockList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStocks not implemented")
-}
-func (UnimplementedStockServiceServer) ListStocks(context.Context, *ListStocksRequest) (*ListStocksResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListStocks not implemented")
 }
 func (UnimplementedStockServiceServer) ReserveStock(context.Context, *ReserveStockRequest) (*ReserveStockResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReserveStock not implemented")
@@ -148,24 +132,6 @@ func _StockService_GetStocks_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(StockServiceServer).GetStocks(ctx, req.(*GetStockRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _StockService_ListStocks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListStocksRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(StockServiceServer).ListStocks(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: StockService_ListStocks_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StockServiceServer).ListStocks(ctx, req.(*ListStocksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -216,10 +182,6 @@ var StockService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetStocks",
 			Handler:    _StockService_GetStocks_Handler,
-		},
-		{
-			MethodName: "ListStocks",
-			Handler:    _StockService_ListStocks_Handler,
 		},
 		{
 			MethodName: "ReserveStock",

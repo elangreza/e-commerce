@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github/elangreza/e-commerce/pkg/dbsql"
 	"github/elangreza/e-commerce/stock/internal/entity"
 	"strings"
 )
@@ -45,4 +46,146 @@ func (r *StockRepo) GetStocks(ctx context.Context, productIDs []string) ([]*enti
 	}
 
 	return stocks, nil
+}
+
+func (r *StockRepo) ReserveStock(ctx context.Context, reserveStock entity.ReserveStock) ([]int64, error) {
+	reservedStockIDs := []int64{}
+	err := dbsql.WithTransaction(r.db, func(tx *sql.Tx) error {
+		for _, reqStock := range reserveStock.Stocks {
+			var currQuantity int64
+			err := tx.QueryRowContext(ctx, `
+			SELECT SUM(qty) as total_qty
+				FROM stocks
+			WHERE product_id = ?;`,
+				reqStock.ProductID).Scan(&currQuantity)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					currQuantity = 0
+				} else {
+					return err
+				}
+			}
+
+			if currQuantity == 0 {
+				return fmt.Errorf("stock for product_id %s is empty", reqStock.ProductID)
+			}
+
+			if currQuantity < reqStock.Quantity {
+				return fmt.Errorf("insufficient stock for product_id %s: requested %d, available %d", reqStock.ProductID, reqStock.Quantity, currQuantity)
+			}
+
+			currentStocks := []entity.Stock{}
+
+			rows, err := tx.QueryContext(ctx, `
+			SELECT 
+				id, 
+				qty
+			FROM (
+				SELECT 
+					id, 
+					qty, 
+					created_at,
+					SUM(qty) OVER (ORDER BY created_at ASC) AS running_total
+				FROM stocks
+				WHERE product_id = ?
+				ORDER BY created_at ASC
+			) 
+			WHERE running_total <= ? OR (
+				running_total > ? AND (running_total - qty) < ?
+			)
+			ORDER BY created_at ASC;
+			`, reqStock.ProductID, reqStock.Quantity, reqStock.Quantity, reqStock.Quantity)
+
+			if err != nil {
+				return err
+			}
+			defer rows.Close()
+			for rows.Next() {
+				var stock entity.Stock
+				if err := rows.Scan(&stock.ID, &stock.Quantity); err != nil {
+					return err
+				}
+				currentStocks = append(currentStocks, stock)
+			}
+			if err := rows.Err(); err != nil {
+				return err
+			}
+
+			// 5
+			// 1 ,2, 3
+			// 1, 2, 2
+
+			var currReqStock = reqStock.Quantity
+			for _, currStock := range currentStocks {
+				var qty = min(currStock.Quantity, currReqStock)
+
+				_, err = tx.ExecContext(ctx, `UPDATE stocks SET quantity = quantity - ? WHERE id = ? AND quantity >= ?`, qty, currStock.ID, qty)
+				if err != nil {
+					return err
+				}
+
+				// TODO adjust status into specific constanta
+				result, err := tx.ExecContext(ctx, `INSERT INTO reserved_stock (stock_id, quantity, user_id, status) VALUES (?, ?, ?, ?)`, currStock.ID, qty, reserveStock.UserID, "reserved")
+				if err != nil {
+					return err
+				}
+
+				insertedID, err := result.LastInsertId()
+				if err != nil {
+					return err
+				}
+
+				reservedStockIDs = append(reservedStockIDs, insertedID)
+
+				currReqStock -= qty
+			}
+
+		}
+		return nil
+	})
+
+	if err != nil {
+		return []int64{}, err
+	}
+
+	return reservedStockIDs, nil
+}
+
+func (r *StockRepo) ReleaseStock(ctx context.Context, releaseStock entity.ReleaseStock) ([]int64, error) {
+	releasedStockIDs := []int64{}
+	err := dbsql.WithTransaction(r.db, func(tx *sql.Tx) error {
+		for _, reservedStockID := range releaseStock.ReservedStockIDs {
+			var quantity, stockID int
+			err := tx.QueryRowContext(ctx, `SELECT quantity, stock_id FROM reserved_stock WHERE id = ? AND user_id = ? AND status = ?`, reservedStockID, releaseStock.UserID, "reserved").Scan(&quantity, &stockID)
+			if err != nil {
+				return err
+			}
+
+			_, err = tx.ExecContext(ctx, `UPDATE stocks SET quantity = quantity + ? WHERE id = ?`, quantity, stockID)
+			if err != nil {
+				return err
+			}
+
+			result, err := tx.ExecContext(ctx, `INSERT INTO released_stock (stock_id, quantity, user_id, reserved_stock_id) VALUES (?, ?, ?, ?)`, stockID, quantity, releaseStock.UserID, reservedStockID)
+			if err != nil {
+				return err
+			}
+
+			insertedID, err := result.LastInsertId()
+			if err != nil {
+				return err
+			}
+			releasedStockIDs = append(releasedStockIDs, insertedID)
+
+			_, err = tx.ExecContext(ctx, `UPDATE reserved_stock SET status = ? WHERE id = ? AND status = ?`, "released", reservedStockID, "reserved")
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return []int64{}, err
+	}
+	return releasedStockIDs, nil
 }

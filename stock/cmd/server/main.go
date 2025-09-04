@@ -3,6 +3,7 @@ package main
 import (
 	"github/elangreza/e-commerce/pkg/dbsql"
 	"github/elangreza/e-commerce/stock/internal/grpcserver"
+	"github/elangreza/e-commerce/stock/internal/grpcserver/interceptor"
 	"github/elangreza/e-commerce/stock/internal/service"
 	"github/elangreza/e-commerce/stock/internal/sqlitedb"
 	"log"
@@ -31,7 +32,11 @@ func main() {
 	listener, err := net.Listen("tcp", address)
 	errChecker(err)
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			interceptor.UserIDParser(),
+		),
+	)
 	gen.RegisterStockServiceServer(grpcServer, stockServer)
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("failed to serve gRPC server: %v", err)
