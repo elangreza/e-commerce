@@ -10,8 +10,16 @@ import (
 
 func UserIDParser() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-		userID := ctx.Value(constanta.UserIDKey).(uuid.UUID)
-		ctx = context.WithValue(ctx, constanta.UserIDKey, userID)
+		userID, ok := ctx.Value(constanta.UserIDKey).(string)
+
+		if ok {
+			uid, err := uuid.Parse(userID) // just to validate
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, constanta.UserIDKey, uid)
+		}
+
 		return handler(ctx, req)
 	}
 }

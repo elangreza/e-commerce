@@ -54,7 +54,7 @@ func (r *StockRepo) ReserveStock(ctx context.Context, reserveStock entity.Reserv
 		for _, reqStock := range reserveStock.Stocks {
 			var currQuantity int64
 			err := tx.QueryRowContext(ctx, `
-			SELECT SUM(qty) as total_qty
+			SELECT SUM(quantity) as total_qty
 				FROM stocks
 			WHERE product_id = ?;`,
 				reqStock.ProductID).Scan(&currQuantity)
@@ -79,19 +79,19 @@ func (r *StockRepo) ReserveStock(ctx context.Context, reserveStock entity.Reserv
 			rows, err := tx.QueryContext(ctx, `
 			SELECT 
 				id, 
-				qty
+				quantity
 			FROM (
 				SELECT 
 					id, 
-					qty, 
+					quantity, 
 					created_at,
-					SUM(qty) OVER (ORDER BY created_at ASC) AS running_total
+					SUM(quantity) OVER (ORDER BY created_at ASC) AS running_total
 				FROM stocks
 				WHERE product_id = ?
 				ORDER BY created_at ASC
 			) 
 			WHERE running_total <= ? OR (
-				running_total > ? AND (running_total - qty) < ?
+				running_total > ? AND (running_total - quantity) < ?
 			)
 			ORDER BY created_at ASC;
 			`, reqStock.ProductID, reqStock.Quantity, reqStock.Quantity, reqStock.Quantity)
@@ -166,7 +166,7 @@ func (r *StockRepo) ReleaseStock(ctx context.Context, releaseStock entity.Releas
 				return err
 			}
 
-			result, err := tx.ExecContext(ctx, `INSERT INTO released_stock (stock_id, quantity, user_id, reserved_stock_id) VALUES (?, ?, ?, ?)`, stockID, quantity, releaseStock.UserID, reservedStockID)
+			result, err := tx.ExecContext(ctx, `INSERT INTO released_stocks (stock_id, quantity, user_id, reserved_stock_id) VALUES (?, ?, ?, ?)`, stockID, quantity, releaseStock.UserID, reservedStockID)
 			if err != nil {
 				return err
 			}
