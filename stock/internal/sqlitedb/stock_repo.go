@@ -112,6 +112,10 @@ func (r *StockRepo) ReserveStock(ctx context.Context, reserveStock entity.Reserv
 				return err
 			}
 
+			// Allocate requested stock quantity by iterating through available stock entries (ordered by creation date).
+			// For each stock entry, reserve as much as possible (up to the remaining requested quantity),
+			// update the stock quantity, and record the reservation until the request is fulfilled.
+
 			var currReqStock = reqStock.Quantity
 			for _, currStock := range currentStocks {
 				var qty = min(currStock.Quantity, currReqStock)
