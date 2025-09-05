@@ -1,4 +1,4 @@
-CREATE TABLE reserved_stock (
+CREATE TABLE reserved_stocks (
     id INTEGER PRIMARY KEY,
     stock_id INTEGER NOT NULL REFERENCES stocks(id),
     quantity INTEGER NOT NULL CHECK (quantity > 0),

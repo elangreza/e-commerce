@@ -125,7 +125,7 @@ func (r *StockRepo) ReserveStock(ctx context.Context, reserveStock entity.Reserv
 					return err
 				}
 
-				result, err := tx.ExecContext(ctx, `INSERT INTO reserved_stock (stock_id, quantity, user_id, status) VALUES (?, ?, ?, ?)`, currStock.ID, qty, reserveStock.UserID, constanta.ReservedStockStatusReserved)
+				result, err := tx.ExecContext(ctx, `INSERT INTO reserved_stocks (stock_id, quantity, user_id, status) VALUES (?, ?, ?, ?)`, currStock.ID, qty, reserveStock.UserID, constanta.ReservedStockStatusReserved)
 				if err != nil {
 					return err
 				}
@@ -156,7 +156,7 @@ func (r *StockRepo) ReleaseStock(ctx context.Context, releaseStock entity.Releas
 	err := dbsql.WithTransaction(r.db, func(tx *sql.Tx) error {
 		for _, reservedStockID := range releaseStock.ReservedStockIDs {
 			var quantity, stockID int
-			err := tx.QueryRowContext(ctx, `SELECT quantity, stock_id FROM reserved_stock WHERE id = ? AND user_id = ? AND status = ?`, reservedStockID, releaseStock.UserID, constanta.ReservedStockStatusReserved).Scan(&quantity, &stockID)
+			err := tx.QueryRowContext(ctx, `SELECT quantity, stock_id FROM reserved_stocks WHERE id = ? AND user_id = ? AND status = ?`, reservedStockID, releaseStock.UserID, constanta.ReservedStockStatusReserved).Scan(&quantity, &stockID)
 			if err != nil {
 				return err
 			}
@@ -177,7 +177,7 @@ func (r *StockRepo) ReleaseStock(ctx context.Context, releaseStock entity.Releas
 			}
 			releasedStockIDs = append(releasedStockIDs, insertedID)
 
-			_, err = tx.ExecContext(ctx, `UPDATE reserved_stock SET status = ? WHERE id = ? AND status = ?`, constanta.ReservedStockStatusReleased, reservedStockID, constanta.ReservedStockStatusReserved)
+			_, err = tx.ExecContext(ctx, `UPDATE reserved_stocks SET status = ? WHERE id = ? AND status = ?`, constanta.ReservedStockStatusReleased, reservedStockID, constanta.ReservedStockStatusReserved)
 			if err != nil {
 				return err
 			}
