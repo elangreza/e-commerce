@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/elangreza/e-commerce/product/internal/entity"
 	"github.com/elangreza/e-commerce/product/internal/mockjson"
@@ -68,8 +67,6 @@ func (s *productService) ListProducts(ctx context.Context, req params.Pagination
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("test")
 
 	return &params.ListProductsResponse{
 		Products:   productResponses,

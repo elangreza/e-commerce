@@ -3,8 +3,10 @@ package grpcserver
 import (
 	"context"
 	"github/elangreza/e-commerce/stock/internal/entity"
+	"github/elangreza/e-commerce/stock/internal/params"
 
 	"github.com/elangreza/e-commerce/gen"
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -12,6 +14,8 @@ import (
 type (
 	stockService interface {
 		GetStocks(ctx context.Context, productIDs []string) ([]*entity.Stock, error)
+		ReserveStock(ctx context.Context, reserveStock params.ReserveStock) ([]int64, error)
+		ReleaseStock(ctx context.Context, releaseStock params.ReleaseStock) ([]int64, error)
 	}
 
 	StockGRPCServer struct {
@@ -43,12 +47,37 @@ func (s *StockGRPCServer) GetStocks(ctx context.Context, req *gen.GetStockReques
 	return stockList, nil
 }
 
-func (s *StockGRPCServer) ListStocks(ctx context.Context, req *gen.ListStocksRequest) (*gen.ListStocksResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListStocks not implemented")
-}
 func (s *StockGRPCServer) ReserveStock(ctx context.Context, req *gen.ReserveStockRequest) (*gen.ReserveStockResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReserveStock not implemented")
+	stocks := params.ReserveStock{}
+	for _, stock := range req.GetStocks() {
+		productID, err := uuid.Parse(stock.GetProductId())
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		stocks.Stocks = append(stocks.Stocks, params.Stock{
+			ProductID: productID,
+			Quantity:  stock.GetQuantity(),
+		})
+	}
+	reservedStockIDs, err := s.service.ReserveStock(ctx, stocks)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &gen.ReserveStockResponse{
+		ReservedStockIds: reservedStockIDs,
+	}, nil
 }
+
 func (s *StockGRPCServer) ReleaseStock(ctx context.Context, req *gen.ReleaseStockRequest) (*gen.ReleaseStockResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReleaseStock not implemented")
+	releasedStockIDs, err := s.service.ReleaseStock(ctx, params.ReleaseStock{
+		ReservedStockIDs: req.GetReservedStockIds(),
+	})
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &gen.ReleaseStockResponse{
+		ReleasedStockIds: releasedStockIDs,
+	}, nil
 }

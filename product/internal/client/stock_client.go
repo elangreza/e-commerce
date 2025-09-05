@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/product/internal/entity"
@@ -28,13 +27,10 @@ func NewStockClient() (*stockServiceClient, error) {
 
 // GetStocks implements StockServiceClient.
 func (s *stockServiceClient) GetStocks(ctx context.Context, productIds []string) ([]entity.Stock, error) {
-	fmt.Println("cek")
-
 	resp, err := s.client.GetStocks(ctx, &gen.GetStockRequest{ProductIds: productIds})
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("cek 2")
 
 	var stocks []entity.Stock
 	for _, item := range resp.Stocks {
