@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github/elangreza/e-commerce/pkg/dbsql"
+	"github/elangreza/e-commerce/stock/internal/constanta"
 	"github/elangreza/e-commerce/stock/internal/entity"
 	"strings"
 )
@@ -111,10 +112,6 @@ func (r *StockRepo) ReserveStock(ctx context.Context, reserveStock entity.Reserv
 				return err
 			}
 
-			// 5
-			// 1 ,2, 3
-			// 1, 2, 2
-
 			var currReqStock = reqStock.Quantity
 			for _, currStock := range currentStocks {
 				var qty = min(currStock.Quantity, currReqStock)
@@ -124,8 +121,7 @@ func (r *StockRepo) ReserveStock(ctx context.Context, reserveStock entity.Reserv
 					return err
 				}
 
-				// TODO adjust status into specific constanta
-				result, err := tx.ExecContext(ctx, `INSERT INTO reserved_stock (stock_id, quantity, user_id, status) VALUES (?, ?, ?, ?)`, currStock.ID, qty, reserveStock.UserID, "reserved")
+				result, err := tx.ExecContext(ctx, `INSERT INTO reserved_stock (stock_id, quantity, user_id, status) VALUES (?, ?, ?, ?)`, currStock.ID, qty, reserveStock.UserID, constanta.ReservedStockStatusReserved)
 				if err != nil {
 					return err
 				}
@@ -156,7 +152,7 @@ func (r *StockRepo) ReleaseStock(ctx context.Context, releaseStock entity.Releas
 	err := dbsql.WithTransaction(r.db, func(tx *sql.Tx) error {
 		for _, reservedStockID := range releaseStock.ReservedStockIDs {
 			var quantity, stockID int
-			err := tx.QueryRowContext(ctx, `SELECT quantity, stock_id FROM reserved_stock WHERE id = ? AND user_id = ? AND status = ?`, reservedStockID, releaseStock.UserID, "reserved").Scan(&quantity, &stockID)
+			err := tx.QueryRowContext(ctx, `SELECT quantity, stock_id FROM reserved_stock WHERE id = ? AND user_id = ? AND status = ?`, reservedStockID, releaseStock.UserID, constanta.ReservedStockStatusReserved).Scan(&quantity, &stockID)
 			if err != nil {
 				return err
 			}
@@ -177,7 +173,7 @@ func (r *StockRepo) ReleaseStock(ctx context.Context, releaseStock entity.Releas
 			}
 			releasedStockIDs = append(releasedStockIDs, insertedID)
 
-			_, err = tx.ExecContext(ctx, `UPDATE reserved_stock SET status = ? WHERE id = ? AND status = ?`, "released", reservedStockID, "reserved")
+			_, err = tx.ExecContext(ctx, `UPDATE reserved_stock SET status = ? WHERE id = ? AND status = ?`, constanta.ReservedStockStatusReleased, reservedStockID, constanta.ReservedStockStatusReserved)
 			if err != nil {
 				return err
 			}
