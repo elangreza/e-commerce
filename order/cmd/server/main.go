@@ -7,10 +7,10 @@ import (
 	"net"
 
 	"github.com/elangreza/e-commerce/gen"
-	"github.com/elangreza/e-commerce/product/internal/client"
-	"github.com/elangreza/e-commerce/product/internal/grpcserver"
-	"github.com/elangreza/e-commerce/product/internal/service"
-	"github.com/elangreza/e-commerce/product/internal/sqlitedb"
+	"github.com/elangreza/e-commerce/order/internal/client"
+	"github.com/elangreza/e-commerce/order/internal/grpcserver"
+	"github.com/elangreza/e-commerce/order/internal/service"
+	"github.com/elangreza/e-commerce/order/internal/sqlitedb"
 	"google.golang.org/grpc"
 )
 
@@ -20,27 +20,26 @@ func main() {
 	// github.com/samber/slog-zap
 
 	db, err := dbsql.NewDbSql(
-		dbsql.WithSqliteDB("product.db"),
+		dbsql.WithSqliteDB("order.db"),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
 	)
 	errChecker(err)
 	defer db.Close()
 
-	// productRepo, err := mockjson.LoadProductJson()
-	productRepo := sqlitedb.NewProductRepository(db)
+	orderRepo := sqlitedb.NewOrderRepository(db)
 	stockClient, err := client.NewStockClient()
 	errChecker(err)
 
-	productService := service.NewProductService(productRepo, stockClient)
-	productServer := grpcserver.NewProductServer(productService)
+	orderService := service.NewOrderService(orderRepo, stockClient)
+	orderServer := grpcserver.NewOrderServer(orderService)
 
-	address := fmt.Sprintf("localhost:%v", 50051)
+	address := fmt.Sprintf(":%v", 50051)
 	listener, err := net.Listen("tcp", address)
 	errChecker(err)
 
 	grpcServer := grpc.NewServer()
-	gen.RegisterProductServiceServer(grpcServer, productServer)
+	gen.RegisterOrderServiceServer(grpcServer, orderServer)
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 		return

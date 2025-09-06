@@ -26,7 +26,7 @@ func (r *StockRepo) GetStocks(ctx context.Context, productIDs []string) ([]*enti
 
 	placeholders := strings.Repeat("?,", len(productIDs))
 	placeholders = strings.TrimRight(placeholders, ",")
-	query := fmt.Sprintf(`SELECT product_id, quantity FROM stocks WHERE product_id IN (%s)`, placeholders)
+	query := fmt.Sprintf(`SELECT product_id, quantity FROM stocks WHERE product_id IN (%s) and quantity > 0`, placeholders)
 	args := make([]any, len(productIDs))
 	for i, id := range productIDs {
 		args[i] = id
@@ -112,6 +112,11 @@ func (r *StockRepo) ReserveStock(ctx context.Context, reserveStock entity.Reserv
 				return err
 			}
 
+			// this reserve stock is using FIFO method
+			// meaning the oldest stock will be reserved first
+			// this is done to prevent stock from being expired
+			// before it is sold
+			// so we need to reserve the oldest stock first.
 			// Allocate requested stock quantity by iterating through available stock entries (ordered by creation date).
 			// For each stock entry, reserve as much as possible (up to the remaining requested quantity),
 			// update the stock quantity, and record the reservation until the request is fulfilled.

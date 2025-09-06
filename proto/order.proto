@@ -4,39 +4,48 @@ package gen;
 
 option go_package = "github.com/elangreza/e-commerce/proto/gen";
 
-
-message UpsertCartRequest {
-    string user_id = 1;
-    CartItem items = 2;
-}   
-
-message UpsertCartResponse {
-    string id = 1;
-}
-
-message CartItem {
-    string product_id = 1;
-    int32 quantity = 2;
-}
-
-// decrease cart item one by one
-message DecreaseCartItemRequest {
-    string user_id = 1;
+// subtract cart item one by one
+message SubtractCartItemRequest {
     string cart_id = 2;
     string product_id = 3;
 }
 
 // add cart item one by one
 message AddCartItemRequest {
-    string user_id = 1;
     string cart_id = 2;
     string product_id = 3;
 }
 
 message Empty {}
 
+message CartItem {
+    string product_id = 1;
+    int64 quantity = 2;
+    double price = 3;
+}
+
+message Cart {
+    string id = 1;
+    repeated CartItem items = 2;
+    double total_price = 3;
+}
+
+message Order {
+    string id = 1;
+    string cart_id = 2;
+    double total_price = 3;
+    string status = 4; // e.g., "pending", "completed", "shipped"
+}
+
 // this service contains all the methods related to checkout and order management
-service CheckoutService {
-    rpc UpsertCart(UpsertCartRequest) returns (UpsertCartResponse) {}
-    rpc DecreaseCartItem(DecreaseCartItemRequest) returns (Empty) {}
+// this require user_id from context metadata
+// all user must be authenticated to access this service
+// and get user_id from context metadata or interceptor
+// the cart is unique for each user
+// the cart is created when the user first add product to cart
+service OrderService {
+    rpc AddProductToCart(AddCartItemRequest) returns (Empty) {}
+    rpc SubtractProductFromCart(SubtractCartItemRequest) returns (Empty) {}
+    rpc GetCart(Empty) returns (Cart) {}
+    rpc CreateOrder(Empty) returns (Order) {}
 }

@@ -19,6 +19,10 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 }
 
 func (pm *ProductRepository) ListProducts(ctx context.Context, req entity.ListProductRequest) ([]entity.Product, error) {
+	orderClause := ""
+	if req.OrderClause != "" {
+		orderClause = " order by " + req.OrderClause
+	}
 
 	q := `select
 		id,
@@ -30,8 +34,7 @@ func (pm *ProductRepository) ListProducts(ctx context.Context, req entity.ListPr
 		updated_at
 	from products
 	where
-		(name LIKE '%' || ? || '%' OR ? IS NULL)
-	order by ` + req.OrderClause + ` LIMIT ? OFFSET ?`
+		(name LIKE '%' || ? || '%' OR ? IS NULL) ` + orderClause + ` LIMIT ? OFFSET ?`
 	offset := (req.Page - 1) * req.Limit
 
 	rows, err := pm.db.QueryContext(ctx, q, req.Search, req.Search, req.Limit, offset)

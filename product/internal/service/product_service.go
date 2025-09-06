@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/product/internal/entity"
 	"github.com/elangreza/e-commerce/product/internal/mockjson"
 	params "github.com/elangreza/e-commerce/product/internal/params"
@@ -22,7 +23,7 @@ type (
 	}
 
 	stockServiceClient interface {
-		GetStocks(ctx context.Context, productIds []string) ([]entity.Stock, error)
+		GetStocks(ctx context.Context, productIds []string) (*gen.StockList, error)
 	}
 )
 
@@ -39,7 +40,6 @@ type productService struct {
 }
 
 func (s *productService) ListProducts(ctx context.Context, req params.PaginationParams) (*params.ListProductsResponse, error) {
-	// Implementation for listing products
 	reqParams := entity.ListProductRequest{
 		Search:      req.Search,
 		Page:        req.Page,
@@ -76,7 +76,6 @@ func (s *productService) ListProducts(ctx context.Context, req params.Pagination
 }
 
 func (s *productService) GetProduct(ctx context.Context, req params.GetProductRequest) (*params.GetProductResponse, error) {
-	// Implementation for getting a product by ID
 	productID, err := uuid.Parse(req.ProductID)
 	if err != nil {
 		return nil, err
@@ -90,16 +89,14 @@ func (s *productService) GetProduct(ctx context.Context, req params.GetProductRe
 		return nil, err
 	}
 
-	stock, err := s.stockServiceClient.GetStocks(ctx, []string{product.ID.String()})
+	stocks, err := s.stockServiceClient.GetStocks(ctx, []string{product.ID.String()})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(stock) == 0 {
-		stock = append(stock, entity.Stock{
-			ProductID: product.ID.String(),
-			Quantity:  0,
-		})
+	var stock int64 = 0
+	for _, v := range stocks.Stocks {
+		stock += v.Quantity
 	}
 
 	return &params.GetProductResponse{
@@ -109,7 +106,7 @@ func (s *productService) GetProduct(ctx context.Context, req params.GetProductRe
 			Description: product.Description,
 			Price:       product.Price,
 			ImageUrl:    product.ImageUrl,
-			Stock:       stock[0].Quantity,
+			Stock:       stock,
 		},
 	}, nil
 }

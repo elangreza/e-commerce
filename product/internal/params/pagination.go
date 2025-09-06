@@ -16,9 +16,8 @@ type PaginationParams struct {
 	validSortKeys map[string]bool
 
 	// local var. Used for sorting in the DB
-	// sortMap        map[string]string
-	sortDirections []string
-	orderClause    string
+	sortDirections strings.Builder
+	defaultSortKey string
 }
 
 func (pqr *PaginationParams) Validate() error {
@@ -31,7 +30,7 @@ func (pqr *PaginationParams) Validate() error {
 	}
 
 	if len(pqr.Sorts) > 0 {
-		newSorts := []string{}
+		newSorts := make([]string, 0)
 		for _, sort := range pqr.Sorts {
 			if strings.Contains(sort, ",") {
 				newSorts = append(newSorts, strings.Split(sort, ",")...)
@@ -40,9 +39,11 @@ func (pqr *PaginationParams) Validate() error {
 			}
 		}
 
-		// pqr.sortMap = make(map[string]string)
-		pqr.sortDirections = make([]string, len(newSorts))
 		for index, sortRaw := range newSorts {
+			if sortRaw == "" {
+				continue
+			}
+
 			parts := strings.Split(sortRaw, ":")
 			if len(parts) != 2 {
 				return fmt.Errorf("%s is not valid sort format", sortRaw)
@@ -59,16 +60,10 @@ func (pqr *PaginationParams) Validate() error {
 				return fmt.Errorf("%s is not valid sort key", value)
 			}
 
-			pqr.sortDirections[index] = fmt.Sprintf("%s %s", value, direction)
-
-		}
-
-		// if sortDirections is empty,
-		// use the default sort with the first element of sorts (index 0)
-		if len(pqr.sortDirections) > 0 {
-			pqr.orderClause = strings.Join(pqr.sortDirections, ", ")
-		} else {
-			pqr.orderClause = pqr.Sorts[0] + " desc"
+			pqr.sortDirections.WriteString(fmt.Sprintf("%s %s", value, direction))
+			if len(newSorts) > 1 && index < len(newSorts)-1 {
+				pqr.sortDirections.WriteString(", ")
+			}
 		}
 	}
 
@@ -76,9 +71,22 @@ func (pqr *PaginationParams) Validate() error {
 }
 
 func (pqr *PaginationParams) GetOrderClause() string {
-	return pqr.orderClause
+	s := pqr.sortDirections.String()
+	if len(s) > 0 {
+		return s
+	}
+
+	if pqr.defaultSortKey != "" {
+		return pqr.defaultSortKey + " desc"
+	}
+
+	return ""
 }
 
+// SetValidSortKey sets the valid sort keys for the pagination params.
+// The first sort key will be used as the default sort key if no sort is provided.
+// the default sort direction is desc.
+// This method should be called before calling Validate().
 func (pqr *PaginationParams) SetValidSortKey(sortKeys ...string) {
 	if pqr.validSortKeys == nil {
 		pqr.validSortKeys = make(map[string]bool)
@@ -86,6 +94,10 @@ func (pqr *PaginationParams) SetValidSortKey(sortKeys ...string) {
 
 	for _, sortKey := range sortKeys {
 		pqr.validSortKeys[sortKey] = true
+	}
+
+	if len(sortKeys) > 0 && pqr.defaultSortKey == "" {
+		pqr.defaultSortKey = sortKeys[0]
 	}
 }
 

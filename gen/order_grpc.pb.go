@@ -19,143 +19,229 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CheckoutService_UpsertCart_FullMethodName       = "/gen.CheckoutService/UpsertCart"
-	CheckoutService_DecreaseCartItem_FullMethodName = "/gen.CheckoutService/DecreaseCartItem"
+	OrderService_AddProductToCart_FullMethodName        = "/gen.OrderService/AddProductToCart"
+	OrderService_SubtractProductFromCart_FullMethodName = "/gen.OrderService/SubtractProductFromCart"
+	OrderService_GetCart_FullMethodName                 = "/gen.OrderService/GetCart"
+	OrderService_CreateOrder_FullMethodName             = "/gen.OrderService/CreateOrder"
 )
 
-// CheckoutServiceClient is the client API for CheckoutService service.
+// OrderServiceClient is the client API for OrderService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // this service contains all the methods related to checkout and order management
-type CheckoutServiceClient interface {
-	UpsertCart(ctx context.Context, in *UpsertCartRequest, opts ...grpc.CallOption) (*UpsertCartResponse, error)
-	DecreaseCartItem(ctx context.Context, in *DecreaseCartItemRequest, opts ...grpc.CallOption) (*Empty, error)
+// this require user_id from context metadata
+// all user must be authenticated to access this service
+// and get user_id from context metadata or interceptor
+// the cart is unique for each user
+// the cart is created when the user first add product to cart
+type OrderServiceClient interface {
+	AddProductToCart(ctx context.Context, in *AddCartItemRequest, opts ...grpc.CallOption) (*Empty, error)
+	SubtractProductFromCart(ctx context.Context, in *SubtractCartItemRequest, opts ...grpc.CallOption) (*Empty, error)
+	GetCart(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Cart, error)
+	CreateOrder(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Order, error)
 }
 
-type checkoutServiceClient struct {
+type orderServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewCheckoutServiceClient(cc grpc.ClientConnInterface) CheckoutServiceClient {
-	return &checkoutServiceClient{cc}
+func NewOrderServiceClient(cc grpc.ClientConnInterface) OrderServiceClient {
+	return &orderServiceClient{cc}
 }
 
-func (c *checkoutServiceClient) UpsertCart(ctx context.Context, in *UpsertCartRequest, opts ...grpc.CallOption) (*UpsertCartResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpsertCartResponse)
-	err := c.cc.Invoke(ctx, CheckoutService_UpsertCart_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *checkoutServiceClient) DecreaseCartItem(ctx context.Context, in *DecreaseCartItemRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *orderServiceClient) AddProductToCart(ctx context.Context, in *AddCartItemRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, CheckoutService_DecreaseCartItem_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, OrderService_AddProductToCart_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// CheckoutServiceServer is the server API for CheckoutService service.
-// All implementations must embed UnimplementedCheckoutServiceServer
+func (c *orderServiceClient) SubtractProductFromCart(ctx context.Context, in *SubtractCartItemRequest, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, OrderService_SubtractProductFromCart_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *orderServiceClient) GetCart(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Cart, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Cart)
+	err := c.cc.Invoke(ctx, OrderService_GetCart_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *orderServiceClient) CreateOrder(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Order, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Order)
+	err := c.cc.Invoke(ctx, OrderService_CreateOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// OrderServiceServer is the server API for OrderService service.
+// All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
 //
 // this service contains all the methods related to checkout and order management
-type CheckoutServiceServer interface {
-	UpsertCart(context.Context, *UpsertCartRequest) (*UpsertCartResponse, error)
-	DecreaseCartItem(context.Context, *DecreaseCartItemRequest) (*Empty, error)
-	mustEmbedUnimplementedCheckoutServiceServer()
+// this require user_id from context metadata
+// all user must be authenticated to access this service
+// and get user_id from context metadata or interceptor
+// the cart is unique for each user
+// the cart is created when the user first add product to cart
+type OrderServiceServer interface {
+	AddProductToCart(context.Context, *AddCartItemRequest) (*Empty, error)
+	SubtractProductFromCart(context.Context, *SubtractCartItemRequest) (*Empty, error)
+	GetCart(context.Context, *Empty) (*Cart, error)
+	CreateOrder(context.Context, *Empty) (*Order, error)
+	mustEmbedUnimplementedOrderServiceServer()
 }
 
-// UnimplementedCheckoutServiceServer must be embedded to have
+// UnimplementedOrderServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedCheckoutServiceServer struct{}
+type UnimplementedOrderServiceServer struct{}
 
-func (UnimplementedCheckoutServiceServer) UpsertCart(context.Context, *UpsertCartRequest) (*UpsertCartResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpsertCart not implemented")
+func (UnimplementedOrderServiceServer) AddProductToCart(context.Context, *AddCartItemRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddProductToCart not implemented")
 }
-func (UnimplementedCheckoutServiceServer) DecreaseCartItem(context.Context, *DecreaseCartItemRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DecreaseCartItem not implemented")
+func (UnimplementedOrderServiceServer) SubtractProductFromCart(context.Context, *SubtractCartItemRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubtractProductFromCart not implemented")
 }
-func (UnimplementedCheckoutServiceServer) mustEmbedUnimplementedCheckoutServiceServer() {}
-func (UnimplementedCheckoutServiceServer) testEmbeddedByValue()                         {}
+func (UnimplementedOrderServiceServer) GetCart(context.Context, *Empty) (*Cart, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCart not implemented")
+}
+func (UnimplementedOrderServiceServer) CreateOrder(context.Context, *Empty) (*Order, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateOrder not implemented")
+}
+func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
+func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
 
-// UnsafeCheckoutServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to CheckoutServiceServer will
+// UnsafeOrderServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to OrderServiceServer will
 // result in compilation errors.
-type UnsafeCheckoutServiceServer interface {
-	mustEmbedUnimplementedCheckoutServiceServer()
+type UnsafeOrderServiceServer interface {
+	mustEmbedUnimplementedOrderServiceServer()
 }
 
-func RegisterCheckoutServiceServer(s grpc.ServiceRegistrar, srv CheckoutServiceServer) {
-	// If the following call pancis, it indicates UnimplementedCheckoutServiceServer was
+func RegisterOrderServiceServer(s grpc.ServiceRegistrar, srv OrderServiceServer) {
+	// If the following call pancis, it indicates UnimplementedOrderServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&CheckoutService_ServiceDesc, srv)
+	s.RegisterService(&OrderService_ServiceDesc, srv)
 }
 
-func _CheckoutService_UpsertCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpsertCartRequest)
+func _OrderService_AddProductToCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddCartItemRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CheckoutServiceServer).UpsertCart(ctx, in)
+		return srv.(OrderServiceServer).AddProductToCart(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CheckoutService_UpsertCart_FullMethodName,
+		FullMethod: OrderService_AddProductToCart_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CheckoutServiceServer).UpsertCart(ctx, req.(*UpsertCartRequest))
+		return srv.(OrderServiceServer).AddProductToCart(ctx, req.(*AddCartItemRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CheckoutService_DecreaseCartItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DecreaseCartItemRequest)
+func _OrderService_SubtractProductFromCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubtractCartItemRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CheckoutServiceServer).DecreaseCartItem(ctx, in)
+		return srv.(OrderServiceServer).SubtractProductFromCart(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CheckoutService_DecreaseCartItem_FullMethodName,
+		FullMethod: OrderService_SubtractProductFromCart_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CheckoutServiceServer).DecreaseCartItem(ctx, req.(*DecreaseCartItemRequest))
+		return srv.(OrderServiceServer).SubtractProductFromCart(ctx, req.(*SubtractCartItemRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// CheckoutService_ServiceDesc is the grpc.ServiceDesc for CheckoutService service.
+func _OrderService_GetCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).GetCart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_GetCart_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).GetCart(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OrderService_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).CreateOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_CreateOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).CreateOrder(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var CheckoutService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "gen.CheckoutService",
-	HandlerType: (*CheckoutServiceServer)(nil),
+var OrderService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "gen.OrderService",
+	HandlerType: (*OrderServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "UpsertCart",
-			Handler:    _CheckoutService_UpsertCart_Handler,
+			MethodName: "AddProductToCart",
+			Handler:    _OrderService_AddProductToCart_Handler,
 		},
 		{
-			MethodName: "DecreaseCartItem",
-			Handler:    _CheckoutService_DecreaseCartItem_Handler,
+			MethodName: "SubtractProductFromCart",
+			Handler:    _OrderService_SubtractProductFromCart_Handler,
+		},
+		{
+			MethodName: "GetCart",
+			Handler:    _OrderService_GetCart_Handler,
+		},
+		{
+			MethodName: "CreateOrder",
+			Handler:    _OrderService_CreateOrder_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

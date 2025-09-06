@@ -28,7 +28,7 @@ func main() {
 	stockService := service.NewStockService(stockRepo)
 	stockServer := grpcserver.NewStockGRPCServer(stockService)
 
-	address := ":50052"
+	address := "localhost:50052"
 	listener, err := net.Listen("tcp", address)
 	errChecker(err)
 

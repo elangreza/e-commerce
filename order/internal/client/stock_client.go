@@ -24,7 +24,6 @@ func NewStockClient() (*stockServiceClient, error) {
 	return &stockServiceClient{client: stockClient}, nil
 }
 
-// GetStocks implements StockServiceClient.
 func (s *stockServiceClient) GetStocks(ctx context.Context, productIds []string) (*gen.StockList, error) {
 	return s.client.GetStocks(ctx, &gen.GetStockRequest{ProductIds: productIds})
 }
