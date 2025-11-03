@@ -4,16 +4,11 @@ package gen;
 
 option go_package = "github.com/elangreza/e-commerce/proto/gen";
 
-// subtract cart item one by one
-message SubtractCartItemRequest {
-    string cart_id = 2;
-    string product_id = 3;
-}
-
 // add cart item one by one
 message AddCartItemRequest {
-    string cart_id = 2;
-    string product_id = 3;
+    string cart_id = 1;
+    string product_id = 2;
+    int64 quantity = 3;
 }
 
 message Empty {}
@@ -45,7 +40,6 @@ message Order {
 // the cart is created when the user first add product to cart
 service OrderService {
     rpc AddProductToCart(AddCartItemRequest) returns (Empty) {}
-    rpc SubtractProductFromCart(SubtractCartItemRequest) returns (Empty) {}
     rpc GetCart(Empty) returns (Cart) {}
     rpc CreateOrder(Empty) returns (Order) {}
 }

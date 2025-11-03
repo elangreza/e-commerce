@@ -19,10 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OrderService_AddProductToCart_FullMethodName        = "/gen.OrderService/AddProductToCart"
-	OrderService_SubtractProductFromCart_FullMethodName = "/gen.OrderService/SubtractProductFromCart"
-	OrderService_GetCart_FullMethodName                 = "/gen.OrderService/GetCart"
-	OrderService_CreateOrder_FullMethodName             = "/gen.OrderService/CreateOrder"
+	OrderService_AddProductToCart_FullMethodName = "/gen.OrderService/AddProductToCart"
+	OrderService_GetCart_FullMethodName          = "/gen.OrderService/GetCart"
+	OrderService_CreateOrder_FullMethodName      = "/gen.OrderService/CreateOrder"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -37,7 +36,6 @@ const (
 // the cart is created when the user first add product to cart
 type OrderServiceClient interface {
 	AddProductToCart(ctx context.Context, in *AddCartItemRequest, opts ...grpc.CallOption) (*Empty, error)
-	SubtractProductFromCart(ctx context.Context, in *SubtractCartItemRequest, opts ...grpc.CallOption) (*Empty, error)
 	GetCart(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Cart, error)
 	CreateOrder(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Order, error)
 }
@@ -54,16 +52,6 @@ func (c *orderServiceClient) AddProductToCart(ctx context.Context, in *AddCartIt
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, OrderService_AddProductToCart_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *orderServiceClient) SubtractProductFromCart(ctx context.Context, in *SubtractCartItemRequest, opts ...grpc.CallOption) (*Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, OrderService_SubtractProductFromCart_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +90,6 @@ func (c *orderServiceClient) CreateOrder(ctx context.Context, in *Empty, opts ..
 // the cart is created when the user first add product to cart
 type OrderServiceServer interface {
 	AddProductToCart(context.Context, *AddCartItemRequest) (*Empty, error)
-	SubtractProductFromCart(context.Context, *SubtractCartItemRequest) (*Empty, error)
 	GetCart(context.Context, *Empty) (*Cart, error)
 	CreateOrder(context.Context, *Empty) (*Order, error)
 	mustEmbedUnimplementedOrderServiceServer()
@@ -117,9 +104,6 @@ type UnimplementedOrderServiceServer struct{}
 
 func (UnimplementedOrderServiceServer) AddProductToCart(context.Context, *AddCartItemRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddProductToCart not implemented")
-}
-func (UnimplementedOrderServiceServer) SubtractProductFromCart(context.Context, *SubtractCartItemRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SubtractProductFromCart not implemented")
 }
 func (UnimplementedOrderServiceServer) GetCart(context.Context, *Empty) (*Cart, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCart not implemented")
@@ -162,24 +146,6 @@ func _OrderService_AddProductToCart_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OrderServiceServer).AddProductToCart(ctx, req.(*AddCartItemRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _OrderService_SubtractProductFromCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SubtractCartItemRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(OrderServiceServer).SubtractProductFromCart(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: OrderService_SubtractProductFromCart_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrderServiceServer).SubtractProductFromCart(ctx, req.(*SubtractCartItemRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -230,10 +196,6 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddProductToCart",
 			Handler:    _OrderService_AddProductToCart_Handler,
-		},
-		{
-			MethodName: "SubtractProductFromCart",
-			Handler:    _OrderService_SubtractProductFromCart_Handler,
 		},
 		{
 			MethodName: "GetCart",

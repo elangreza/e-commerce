@@ -27,11 +27,14 @@ func main() {
 	errChecker(err)
 	defer db.Close()
 
+	cartRepo := sqlitedb.NewCartRepository(db)
 	orderRepo := sqlitedb.NewOrderRepository(db)
 	stockClient, err := client.NewStockClient()
 	errChecker(err)
+	productClient, err := client.NewProductClient()
+	errChecker(err)
 
-	orderService := service.NewOrderService(orderRepo, stockClient)
+	orderService := service.NewOrderService(orderRepo, cartRepo, stockClient, productClient)
 	orderServer := grpcserver.NewOrderServer(orderService)
 
 	address := fmt.Sprintf(":%v", 50051)
