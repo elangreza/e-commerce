@@ -194,3 +194,37 @@ func (r *StockRepo) ReleaseStock(ctx context.Context, releaseStock entity.Releas
 	}
 	return releasedStockIDs, nil
 }
+
+func (r *StockRepo) ConfirmStock(ctx context.Context, confirmStock entity.ConfirmStock) ([]int64, error) {
+	releasedStockIDs := []int64{}
+	err := dbsql.WithTransaction(r.db, func(tx *sql.Tx) error {
+		for _, reservedStockID := range confirmStock.ReservedStockIDs {
+			var quantity, stockID int
+			err := tx.QueryRowContext(ctx, `SELECT quantity, stock_id FROM reserved_stocks WHERE id = ? AND user_id = ? AND status = ?`, reservedStockID, confirmStock.UserID, constanta.ReservedStockStatusReserved).Scan(&quantity, &stockID)
+			if err != nil {
+				return err
+			}
+
+			result, err := tx.ExecContext(ctx, `INSERT INTO confirmed_stocks (stock_id, quantity, user_id, reserved_stock_id) VALUES (?, ?, ?, ?)`, stockID, quantity, confirmStock.UserID, reservedStockID)
+			if err != nil {
+				return err
+			}
+
+			insertedID, err := result.LastInsertId()
+			if err != nil {
+				return err
+			}
+			releasedStockIDs = append(releasedStockIDs, insertedID)
+
+			_, err = tx.ExecContext(ctx, `UPDATE reserved_stocks SET status = ? WHERE id = ? AND status = ?`, constanta.ConfirmedStockStatusReleased, reservedStockID, constanta.ReservedStockStatusReserved)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return []int64{}, err
+	}
+	return releasedStockIDs, nil
+}

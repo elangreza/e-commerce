@@ -7,7 +7,11 @@ type ReserveStock struct {
 }
 
 type ReleaseStock struct {
-	ReservedStockIDs []int64 `json:"released_stock_ids"`
+	ReservedStockIDs []int64 `json:"reserved_stock_ids"`
+}
+
+type ConfirmStock struct {
+	ReservedStockIDs []int64 `json:"reserved_stock_ids"`
 }
 
 type Stock struct {

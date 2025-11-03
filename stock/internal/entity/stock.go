@@ -17,3 +17,8 @@ type ReleaseStock struct {
 	ReservedStockIDs []int64   `json:"reserved_stock_id"`
 	UserID           uuid.UUID `json:"user_id"`
 }
+
+type ConfirmStock struct {
+	ReservedStockIDs []int64   `json:"reserved_stock_id"`
+	UserID           uuid.UUID `json:"user_id"`
+}

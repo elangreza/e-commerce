@@ -5,6 +5,7 @@ type (
 )
 
 const (
-	ReservedStockStatusReserved ReservedStockStatus = "reserved"
-	ReservedStockStatusReleased ReservedStockStatus = "released"
+	ReservedStockStatusReserved  ReservedStockStatus = "reserved"
+	ReservedStockStatusReleased  ReservedStockStatus = "released"
+	ConfirmedStockStatusReleased ReservedStockStatus = "confirmed"
 )

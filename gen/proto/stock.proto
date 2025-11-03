@@ -33,8 +33,17 @@ message ReleaseStockResponse {
     repeated int64 released_stock_ids = 1;
 }
 
+message ConfirmedStockRequest {
+    repeated int64 reserved_stock_ids = 1;
+}
+
+message ConfirmedStockResponse {
+    repeated int64 confirmed_stock_ids = 1;
+}
+
 service StockService {
     rpc GetStocks(GetStockRequest) returns (StockList) {}
     rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse) {}
     rpc ReleaseStock(ReleaseStockRequest) returns (ReleaseStockResponse) {}
+    rpc ConfirmedStock(ConfirmedStockRequest) returns (ConfirmedStockResponse) {}
 }

@@ -13,6 +13,7 @@ require (
 
 require (
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/shopspring/decimal v1.4.0 // indirect
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect

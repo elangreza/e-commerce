@@ -16,6 +16,7 @@ type (
 		GetStocks(ctx context.Context, productIDs []string) ([]*entity.Stock, error)
 		ReserveStock(ctx context.Context, reserveStock params.ReserveStock) ([]int64, error)
 		ReleaseStock(ctx context.Context, releaseStock params.ReleaseStock) ([]int64, error)
+		ConfirmStock(ctx context.Context, confirmStock params.ConfirmStock) ([]int64, error)
 	}
 
 	StockGRPCServer struct {
@@ -79,5 +80,18 @@ func (s *StockGRPCServer) ReleaseStock(ctx context.Context, req *gen.ReleaseStoc
 
 	return &gen.ReleaseStockResponse{
 		ReleasedStockIds: releasedStockIDs,
+	}, nil
+}
+
+func (s *StockGRPCServer) ConfirmedStock(ctx context.Context, req *gen.ConfirmedStockRequest) (*gen.ConfirmedStockResponse, error) {
+	confirmedStockIDs, err := s.service.ConfirmStock(ctx, params.ConfirmStock{
+		ReservedStockIDs: req.GetReservedStockIds(),
+	})
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &gen.ConfirmedStockResponse{
+		ConfirmedStockIds: confirmedStockIDs,
 	}, nil
 }

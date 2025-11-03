@@ -15,6 +15,7 @@ type (
 		GetStocks(ctx context.Context, productIDs []string) ([]*entity.Stock, error)
 		ReserveStock(ctx context.Context, reserveStock entity.ReserveStock) ([]int64, error)
 		ReleaseStock(ctx context.Context, releaseStock entity.ReleaseStock) ([]int64, error)
+		ConfirmStock(ctx context.Context, confirmStock entity.ConfirmStock) ([]int64, error)
 	}
 
 	StockService struct {
@@ -74,4 +75,22 @@ func (s *StockService) ReleaseStock(ctx context.Context, releaseStock params.Rel
 	}
 
 	return releasedStockIDs, nil
+}
+
+func (s *StockService) ConfirmStock(ctx context.Context, confirmedStock params.ConfirmStock) ([]int64, error) {
+
+	userID, ok := ctx.Value(constanta.UserIDKey).(uuid.UUID)
+	if !ok {
+		return nil, errors.New("unauthorized")
+	}
+
+	confirmedStockIDs, err := s.repo.ConfirmStock(ctx, entity.ConfirmStock{
+		ReservedStockIDs: confirmedStock.ReservedStockIDs,
+		UserID:           userID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return confirmedStockIDs, nil
 }

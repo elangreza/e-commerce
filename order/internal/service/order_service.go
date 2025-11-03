@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	globalcontanta "github/elangreza/e-commerce/pkg/globalcontanta"
 
 	"github.com/elangreza/e-commerce/gen"
@@ -24,6 +25,7 @@ type (
 
 	stockServiceClient interface {
 		GetStocks(ctx context.Context, productIds []string) (*gen.StockList, error)
+		ReserveStock(ctx context.Context, cartItem []entity.CartItem) (*gen.ReserveStockResponse, error)
 	}
 
 	productServiceClient interface {
@@ -173,9 +175,18 @@ func (s *orderService) CreateOrder(ctx context.Context) (*entity.Order, error) {
 		return nil, err
 	}
 
-	if cart == nil {
+	if cart == nil || len(cart.Items) == 0 {
 		return nil, errors.New("cart is empty")
 	}
+
+	reserveIDs, err := s.stockServiceClient.ReserveStock(ctx, cart.Items)
+	if err != nil {
+		return nil, errors.New("errors when reserving stocks")
+	}
+
+	fmt.Println(reserveIDs)
+
+	// create order
 
 	return nil, nil
 }

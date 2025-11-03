@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StockService_GetStocks_FullMethodName    = "/gen.StockService/GetStocks"
-	StockService_ReserveStock_FullMethodName = "/gen.StockService/ReserveStock"
-	StockService_ReleaseStock_FullMethodName = "/gen.StockService/ReleaseStock"
+	StockService_GetStocks_FullMethodName      = "/gen.StockService/GetStocks"
+	StockService_ReserveStock_FullMethodName   = "/gen.StockService/ReserveStock"
+	StockService_ReleaseStock_FullMethodName   = "/gen.StockService/ReleaseStock"
+	StockService_ConfirmedStock_FullMethodName = "/gen.StockService/ConfirmedStock"
 )
 
 // StockServiceClient is the client API for StockService service.
@@ -31,6 +32,7 @@ type StockServiceClient interface {
 	GetStocks(ctx context.Context, in *GetStockRequest, opts ...grpc.CallOption) (*StockList, error)
 	ReserveStock(ctx context.Context, in *ReserveStockRequest, opts ...grpc.CallOption) (*ReserveStockResponse, error)
 	ReleaseStock(ctx context.Context, in *ReleaseStockRequest, opts ...grpc.CallOption) (*ReleaseStockResponse, error)
+	ConfirmedStock(ctx context.Context, in *ConfirmedStockRequest, opts ...grpc.CallOption) (*ConfirmedStockResponse, error)
 }
 
 type stockServiceClient struct {
@@ -71,6 +73,16 @@ func (c *stockServiceClient) ReleaseStock(ctx context.Context, in *ReleaseStockR
 	return out, nil
 }
 
+func (c *stockServiceClient) ConfirmedStock(ctx context.Context, in *ConfirmedStockRequest, opts ...grpc.CallOption) (*ConfirmedStockResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConfirmedStockResponse)
+	err := c.cc.Invoke(ctx, StockService_ConfirmedStock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StockServiceServer is the server API for StockService service.
 // All implementations must embed UnimplementedStockServiceServer
 // for forward compatibility.
@@ -78,6 +90,7 @@ type StockServiceServer interface {
 	GetStocks(context.Context, *GetStockRequest) (*StockList, error)
 	ReserveStock(context.Context, *ReserveStockRequest) (*ReserveStockResponse, error)
 	ReleaseStock(context.Context, *ReleaseStockRequest) (*ReleaseStockResponse, error)
+	ConfirmedStock(context.Context, *ConfirmedStockRequest) (*ConfirmedStockResponse, error)
 	mustEmbedUnimplementedStockServiceServer()
 }
 
@@ -96,6 +109,9 @@ func (UnimplementedStockServiceServer) ReserveStock(context.Context, *ReserveSto
 }
 func (UnimplementedStockServiceServer) ReleaseStock(context.Context, *ReleaseStockRequest) (*ReleaseStockResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReleaseStock not implemented")
+}
+func (UnimplementedStockServiceServer) ConfirmedStock(context.Context, *ConfirmedStockRequest) (*ConfirmedStockResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConfirmedStock not implemented")
 }
 func (UnimplementedStockServiceServer) mustEmbedUnimplementedStockServiceServer() {}
 func (UnimplementedStockServiceServer) testEmbeddedByValue()                      {}
@@ -172,6 +188,24 @@ func _StockService_ReleaseStock_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StockService_ConfirmedStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmedStockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StockServiceServer).ConfirmedStock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StockService_ConfirmedStock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StockServiceServer).ConfirmedStock(ctx, req.(*ConfirmedStockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StockService_ServiceDesc is the grpc.ServiceDesc for StockService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +224,10 @@ var StockService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReleaseStock",
 			Handler:    _StockService_ReleaseStock_Handler,
+		},
+		{
+			MethodName: "ConfirmedStock",
+			Handler:    _StockService_ConfirmedStock_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
