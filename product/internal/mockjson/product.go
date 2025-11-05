@@ -45,8 +45,8 @@ func (pm *ProductMock) ListProducts(ctx context.Context, req entity.ListProductR
 			switch req.OrderClause {
 			case "name":
 				return filteredProducts[i].Name < filteredProducts[j].Name
-			case "price":
-				return filteredProducts[i].Price < filteredProducts[j].Price
+			// case "price":
+			// 	return filteredProducts[i].Price < filteredProducts[j].Price
 			case "updated_at":
 				return filteredProducts[i].UpdatedAt < filteredProducts[j].UpdatedAt
 			default:

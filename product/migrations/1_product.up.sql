@@ -11,6 +11,7 @@ CREATE TABLE products (
     name TEXT NOT NULL,
     description TEXT,
     price NUMERIC NOT NULL CHECK (price >= 0),
+    currency TEXT,
     image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

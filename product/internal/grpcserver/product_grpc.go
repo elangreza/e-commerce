@@ -58,7 +58,7 @@ func (s *ProductServer) ListProducts(ctx context.Context, req *gen.ListProductsR
 			Id:          product.ID,
 			Name:        product.Name,
 			Description: product.Description,
-			Price:       product.Price,
+			Price:       product.Price.ToProto(),
 			ImageUrl:    product.ImageUrl,
 		}
 	}
@@ -86,7 +86,7 @@ func (s *ProductServer) GetProduct(ctx context.Context, req *gen.GetProductReque
 		Id:          response.Product.ID,
 		Name:        response.Product.Name,
 		Description: response.Product.Description,
-		Price:       response.Product.Price,
+		Price:       response.Product.Price.ToProto(),
 		ImageUrl:    response.Product.ImageUrl,
 		Stock:       response.Product.Stock,
 	}, nil

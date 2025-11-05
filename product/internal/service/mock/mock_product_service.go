@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	gen "github.com/elangreza/e-commerce/gen"
 	entity "github.com/elangreza/e-commerce/product/internal/entity"
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
@@ -85,4 +86,43 @@ func (m *MockproductRepo) TotalProducts(ctx context.Context, req entity.ListProd
 func (mr *MockproductRepoMockRecorder) TotalProducts(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalProducts", reflect.TypeOf((*MockproductRepo)(nil).TotalProducts), ctx, req)
+}
+
+// MockstockServiceClient is a mock of stockServiceClient interface.
+type MockstockServiceClient struct {
+	ctrl     *gomock.Controller
+	recorder *MockstockServiceClientMockRecorder
+	isgomock struct{}
+}
+
+// MockstockServiceClientMockRecorder is the mock recorder for MockstockServiceClient.
+type MockstockServiceClientMockRecorder struct {
+	mock *MockstockServiceClient
+}
+
+// NewMockstockServiceClient creates a new mock instance.
+func NewMockstockServiceClient(ctrl *gomock.Controller) *MockstockServiceClient {
+	mock := &MockstockServiceClient{ctrl: ctrl}
+	mock.recorder = &MockstockServiceClientMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockstockServiceClient) EXPECT() *MockstockServiceClientMockRecorder {
+	return m.recorder
+}
+
+// GetStocks mocks base method.
+func (m *MockstockServiceClient) GetStocks(ctx context.Context, productIds []string) (*gen.StockList, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStocks", ctx, productIds)
+	ret0, _ := ret[0].(*gen.StockList)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStocks indicates an expected call of GetStocks.
+func (mr *MockstockServiceClientMockRecorder) GetStocks(ctx, productIds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStocks", reflect.TypeOf((*MockstockServiceClient)(nil).GetStocks), ctx, productIds)
 }
