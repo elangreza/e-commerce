@@ -12,6 +12,7 @@ import (
 	"github.com/elangreza/e-commerce/gen"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -37,7 +38,11 @@ func main() {
 			interceptor.UserIDParser(),
 		),
 	)
+
 	gen.RegisterStockServiceServer(grpcServer, stockServer)
+
+	// Register reflection service on gRPC server.
+	reflection.Register(grpcServer)
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("failed to serve gRPC server: %v", err)
 	}

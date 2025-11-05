@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github/elangreza/e-commerce/pkg/converter"
 	globalcontanta "github/elangreza/e-commerce/pkg/globalcontanta"
 
 	"github.com/elangreza/e-commerce/gen"
@@ -77,6 +78,12 @@ func (s *orderService) AddProductToCart(ctx context.Context, productId string, q
 		if product == nil {
 			return errors.New("product not found")
 		}
+
+		price, err := converter.MoneyFromProto(product.Price)
+		if err != nil {
+			return err
+		}
+
 		cart = &entity.Cart{
 			ID:     id,
 			UserID: userID,
@@ -84,7 +91,7 @@ func (s *orderService) AddProductToCart(ctx context.Context, productId string, q
 				{
 					ProductID: productId,
 					Quantity:  quantity,
-					Price:     product.Price,
+					Price:     price,
 				},
 			},
 		}

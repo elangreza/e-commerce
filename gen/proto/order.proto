@@ -1,8 +1,13 @@
 syntax = "proto3";
 
+
 package gen;
 
+// ignore the error not found in vscode
+import "money.proto";
+
 option go_package = "github.com/elangreza/e-commerce/proto/gen";
+
 
 // add cart item one by one
 message AddCartItemRequest {
@@ -25,11 +30,19 @@ message Cart {
     double total_price = 3;
 }
 
+message OrderItem {
+  string product_id = 1;
+  string name = 3;
+  Money price_per_unit = 4;
+  int32 quantity = 5;
+}
+
 message Order {
-    string id = 1;
-    string cart_id = 2;
-    double total_price = 3;
-    string status = 4; // e.g., "pending", "completed", "shipped"
+  string id = 1;
+  string user_id = 2;
+  repeated OrderItem items = 3;
+  Money total_amount = 4;
+  string status = 5;
 }
 
 // this service contains all the methods related to checkout and order management

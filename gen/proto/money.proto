@@ -1,0 +1,11 @@
+// proto/common/money.proto
+syntax = "proto3";
+
+package gen;
+
+option go_package = "github.com/elangreza/e-commerce/proto/gen";
+
+message Money {
+  int64 units = 1;
+  string currency_code = 2;
+}
