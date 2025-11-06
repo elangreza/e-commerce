@@ -1,16 +1,14 @@
 package params
 
-import (
-	"github/elangreza/e-commerce/pkg/converter"
-)
+import "github.com/elangreza/e-commerce/gen"
 
 type ProductResponse struct {
-	ID          string          `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Price       converter.Money `json:"price"`
-	ImageUrl    string          `json:"image_url"`
-	Stock       int64           `json:"stock"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Price       *gen.Money `json:"price"`
+	ImageUrl    string     `json:"image_url"`
+	Stock       int64      `json:"stock"`
 }
 
 type ListProductsResponse struct {

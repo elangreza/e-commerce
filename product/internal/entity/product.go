@@ -1,19 +1,18 @@
 package entity
 
 import (
-	"github/elangreza/e-commerce/pkg/converter"
-
+	"github.com/elangreza/e-commerce/gen"
 	"github.com/google/uuid"
 )
 
 type Product struct {
-	ID          uuid.UUID       `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Price       converter.Money `json:"price"`
-	ImageUrl    string          `json:"image_url"`
-	CreatedAt   string          `json:"created_at"`
-	UpdatedAt   string          `json:"updated_at"`
+	ID          uuid.UUID  `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Price       *gen.Money `json:"price"`
+	ImageUrl    string     `json:"image_url"`
+	CreatedAt   string     `json:"created_at"`
+	UpdatedAt   string     `json:"updated_at"`
 }
 
 type ListProductRequest struct {

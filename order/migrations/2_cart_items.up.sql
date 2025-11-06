@@ -5,7 +5,7 @@ CREATE TABLE cart_items (
     quantity INT NOT NULL CHECK (quantity > 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    price NUMERIC NOT NULL CHECK (price >= 0),
+    price INTEGER NOT NULL CHECK (price >= 0),
     UNIQUE(cart_id, product_id)
 );
 

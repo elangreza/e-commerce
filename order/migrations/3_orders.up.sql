@@ -1,23 +1,23 @@
 CREATE TABLE orders (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL,                     -- Who placed the order?
-    status TEXT NOT NULL CHECK (status IN (
-        'pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'failed'
-    )),
-    total_amount DECIMAL(12, 2) NOT NULL,      -- Total price (cached for reporting)
-    currency CHAR(3) NOT NULL DEFAULT 'IDR',   -- e.g., IDR, USD, EUR
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,   
-    shipped_at TIMESTAMP DEFAULT NULL,
-    cancelled_at TIMESTAMP DEFAULT NULL
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    status TEXT NOT NULL,
+    total_amount_units INTEGER NOT NULL,  -- e.g., 125000 (IDR), 12500 (USD $125.00)
+    currency TEXT NOT NULL DEFAULT 'IDR',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    shipped_at TEXT,
+    cancelled_at TEXT
 );
 
 CREATE TABLE order_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    product_id UUID NOT NULL,                 -- ID from Product Service (denormalized)
-    name TEXT NOT NULL,                       -- Product name at time of order (denormalized)
-    price_per_unit DECIMAL(10, 2) NOT NULL,   -- Snapshot of price (critical!)
-    quantity INT NOT NULL CHECK (quantity > 0),
-    total_price DECIMAL(12, 2) NOT NULL       -- = price_per_unit * quantity
+    id TEXT PRIMARY KEY,
+    order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    product_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    price_per_unit_units INTEGER NOT NULL,  -- minor units (e.g., cents, rupiah)
+    currency TEXT NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    total_price_units INTEGER NOT NULL,     -- = price_per_unit_units * quantity
+    CHECK (total_price_units = price_per_unit_units * quantity)
 );

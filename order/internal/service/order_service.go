@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github/elangreza/e-commerce/pkg/converter"
 	globalcontanta "github/elangreza/e-commerce/pkg/globalcontanta"
+	"github/elangreza/e-commerce/pkg/money"
 
 	"github.com/elangreza/e-commerce/gen"
+	"github.com/elangreza/e-commerce/order/internal/constanta"
 	"github.com/elangreza/e-commerce/order/internal/entity"
 	"github.com/google/uuid"
 )
@@ -22,11 +23,14 @@ type (
 		UpdateCartItem(ctx context.Context, cartID uuid.UUID, item entity.CartItem) error
 	}
 
-	orderRepo interface{}
+	orderRepo interface {
+		CreateOrder(ctx context.Context, order entity.Order) (uuid.UUID, error)
+	}
 
 	stockServiceClient interface {
 		GetStocks(ctx context.Context, productIds []string) (*gen.StockList, error)
 		ReserveStock(ctx context.Context, cartItem []entity.CartItem) (*gen.ReserveStockResponse, error)
+		ReleaseStock(ctx context.Context, reservedStockIds []int64) (*gen.ReleaseStockResponse, error)
 	}
 
 	productServiceClient interface {
@@ -79,11 +83,6 @@ func (s *orderService) AddProductToCart(ctx context.Context, productId string, q
 			return errors.New("product not found")
 		}
 
-		price, err := converter.MoneyFromProto(product.Price)
-		if err != nil {
-			return err
-		}
-
 		cart = &entity.Cart{
 			ID:     id,
 			UserID: userID,
@@ -91,7 +90,7 @@ func (s *orderService) AddProductToCart(ctx context.Context, productId string, q
 				{
 					ProductID: productId,
 					Quantity:  quantity,
-					Price:     price,
+					Price:     product.Price,
 				},
 			},
 		}
@@ -179,21 +178,92 @@ func (s *orderService) CreateOrder(ctx context.Context) (*entity.Order, error) {
 
 	cart, err := s.cartRepo.GetCartByUserID(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get cart: %w", err)
 	}
-
 	if cart == nil || len(cart.Items) == 0 {
 		return nil, errors.New("cart is empty")
 	}
 
 	reserveIDs, err := s.stockServiceClient.ReserveStock(ctx, cart.Items)
 	if err != nil {
-		return nil, errors.New("errors when reserving stocks")
+		return nil, fmt.Errorf("failed to reserve stock: %w", err)
 	}
 
-	fmt.Println(reserveIDs)
+	// Defer stock release on any error after reservation
+	var finalOrder *entity.Order
+	var finalErr error
+	defer func() {
+		if finalErr != nil {
+			_, releaseErr := s.stockServiceClient.ReleaseStock(ctx, reserveIDs.GetReservedStockIds())
+			if releaseErr != nil {
+				// TODO: log error (e.g., s.logger.Error("failed to release reserved stock", ...))
+			}
+		}
+	}()
 
-	// create order
+	// Enforce single-currency cart (required to safely sum totalAmount)
+	var cartCurrency string
+	orderItems := make([]entity.OrderItem, 0, len(cart.Items))
+	totalAmount := &gen.Money{}
 
-	return nil, nil
+	for _, item := range cart.Items {
+		product, err := s.productServiceClient.GetProduct(ctx, item.ProductID)
+		if err != nil {
+			finalErr = fmt.Errorf("failed to fetch product %s: %w", item.ProductID, err)
+			return nil, finalErr
+		}
+
+		price := product.GetPrice()
+		if price == nil {
+			finalErr = fmt.Errorf("product %s has no price", item.ProductID)
+			return nil, finalErr
+		}
+
+		// Validate currency consistency
+		if cartCurrency == "" {
+			cartCurrency = price.GetCurrencyCode()
+		} else if cartCurrency != price.GetCurrencyCode() {
+			finalErr = errors.New("mixed currencies in cart are not supported")
+			return nil, finalErr
+		}
+
+		totalPricePerUnit, err := money.MultiplyByInt(price, item.Quantity)
+		if err != nil {
+			finalErr = fmt.Errorf("failed to calculate total price for product %s: %w", item.ProductID, err)
+			return nil, finalErr
+		}
+
+		orderItems = append(orderItems, entity.OrderItem{
+			ProductID:         item.ProductID,
+			Name:              product.GetName(),
+			PricePerUnit:      price,
+			Currency:          price.GetCurrencyCode(),
+			Quantity:          item.Quantity,
+			TotalPricePerUnit: totalPricePerUnit,
+		})
+
+		totalAmount, err = money.Add(totalAmount, totalPricePerUnit)
+		if err != nil {
+			finalErr = fmt.Errorf("failed to accumulate total amount: %w", err)
+			return nil, finalErr
+		}
+	}
+
+	order := entity.Order{
+		UserID:      userID,
+		Status:      constanta.OrderStatusPending,
+		Items:       orderItems,
+		TotalAmount: totalAmount,
+		Currency:    cartCurrency,
+	}
+
+	orderID, err := s.orderRepo.CreateOrder(ctx, order)
+	if err != nil {
+		finalErr = fmt.Errorf("failed to persist order: %w", err)
+		return nil, finalErr
+	}
+
+	order.ID = orderID
+	finalOrder = &order
+	return finalOrder, nil
 }

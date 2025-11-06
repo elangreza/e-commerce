@@ -3,9 +3,8 @@ package sqlitedb
 import (
 	"context"
 	"database/sql"
-	"github/elangreza/e-commerce/pkg/converter"
+	"github/elangreza/e-commerce/pkg/money"
 
-	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/product/internal/entity"
 	"github.com/google/uuid"
 )
@@ -54,12 +53,8 @@ func (pm *ProductRepository) ListProducts(ctx context.Context, req entity.ListPr
 		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &priceAmount, &priceCurrency, &p.ImageUrl, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
-		price := &gen.Money{
-			Units:        priceAmount,
-			CurrencyCode: priceCurrency,
-		}
 
-		p.Price, err = converter.MoneyFromProto(price)
+		p.Price, err = money.New(priceAmount, priceCurrency)
 		if err != nil {
 			return nil, err
 		}
@@ -107,12 +102,7 @@ func (pm *ProductRepository) GetProductByID(ctx context.Context, productID uuid.
 		return nil, err
 	}
 
-	price := &gen.Money{
-		Units:        priceAmount,
-		CurrencyCode: priceCurrency,
-	}
-
-	p.Price, err = converter.MoneyFromProto(price)
+	p.Price, err = money.New(priceAmount, priceCurrency)
 	if err != nil {
 		return nil, err
 	}

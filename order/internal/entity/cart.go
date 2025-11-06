@@ -1,8 +1,7 @@
 package entity
 
 import (
-	"github/elangreza/e-commerce/pkg/converter"
-
+	"github.com/elangreza/e-commerce/gen"
 	"github.com/google/uuid"
 )
 
@@ -15,6 +14,6 @@ type Cart struct {
 type CartItem struct {
 	ProductID string
 	Quantity  int64
-	Price     converter.Money
+	Price     *gen.Money
 	Stock     int64
 }
