@@ -27,3 +27,10 @@ func NewProductClient() (*productServiceClient, error) {
 func (s *productServiceClient) GetProduct(ctx context.Context, productId string) (*gen.Product, error) {
 	return s.client.GetProduct(ctx, &gen.GetProductRequest{Id: productId})
 }
+
+func (s *productServiceClient) GetProducts(ctx context.Context, withStock bool, productIds ...string) (*gen.Products, error) {
+	return s.client.GetProducts(ctx, &gen.GetProductsRequest{
+		Ids:       productIds,
+		WithStock: withStock,
+	})
+}

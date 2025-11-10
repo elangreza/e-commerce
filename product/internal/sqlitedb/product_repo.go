@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github/elangreza/e-commerce/pkg/money"
+	"strings"
 
 	"github.com/elangreza/e-commerce/product/internal/entity"
 	"github.com/google/uuid"
@@ -74,7 +75,7 @@ func (pm *ProductRepository) TotalProducts(ctx context.Context, req entity.ListP
 	return total, nil
 }
 
-func (pm *ProductRepository) GetProductByID(ctx context.Context, productID uuid.UUID) (*entity.Product, error) {
+func (pm *ProductRepository) GetProductByIDs(ctx context.Context, productID ...uuid.UUID) ([]entity.Product, error) {
 	q := `select
 		id,
 		name,
@@ -86,26 +87,61 @@ func (pm *ProductRepository) GetProductByID(ctx context.Context, productID uuid.
 		updated_at
 	from products
 	where id = ?`
-	var p entity.Product
-	var priceAmount int64
-	var priceCurrency string
-	var err error
-	if err = pm.db.QueryRowContext(ctx, q, productID).Scan(
-		&p.ID,
-		&p.Name,
-		&p.Description,
-		&priceAmount,
-		&priceCurrency,
-		&p.ImageUrl,
-		&p.CreatedAt,
-		&p.UpdatedAt); err != nil {
-		return nil, err
+	args := []any{}
+	arg, qMarks := buildPlaceHoldersInClause(productID)
+	args = append(args, arg...)
+	if len(productID) > 1 {
+		q = `select
+		id,
+		name,
+		description,
+		price,
+		currency,
+		image_url,
+		created_at,
+		updated_at
+	from products
+	where id IN (` + qMarks + `)`
 	}
-
-	p.Price, err = money.New(priceAmount, priceCurrency)
+	rows, err := pm.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	return &p, nil
+	products := []entity.Product{}
+
+	for rows.Next() {
+		var p entity.Product
+		var priceAmount int64
+		var priceCurrency string
+		err := rows.Scan(
+			&p.ID,
+			&p.Name,
+			&p.Description,
+			&priceAmount,
+			&priceCurrency,
+			&p.ImageUrl,
+			&p.CreatedAt,
+			&p.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		p.Price, err = money.New(priceAmount, priceCurrency)
+		if err != nil {
+			return nil, err
+		}
+
+		products = append(products, p)
+	}
+
+	return products, nil
+}
+
+func buildPlaceHoldersInClause(items ...any) ([]any, string) {
+	if len(items) == 0 {
+		return nil, ""
+	}
+
+	qMarks := strings.Repeat("?,", len(items)-1) + "?"
+	return items, qMarks
 }

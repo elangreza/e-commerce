@@ -10,6 +10,7 @@ option go_package = "github.com/elangreza/e-commerce/proto/gen";
 service ProductService {
     rpc ListProducts(ListProductsRequest) returns (ListProductsResponse) {}
     rpc GetProduct(GetProductRequest) returns (Product) {}
+    rpc GetProducts(GetProductsRequest) returns (Products) {}
 }
 
 message Product {
@@ -19,6 +20,15 @@ message Product {
     string image_url = 4;
     Money price = 5;
     int64 stock = 6;
+}
+
+message GetProductsRequest {
+    repeated string ids = 1;
+    bool withStock = 2;
+}
+
+message Products {
+    repeated Product products = 1;
 }
 
 message ListProductsResponse {

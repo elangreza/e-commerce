@@ -35,6 +35,7 @@ type (
 
 	productServiceClient interface {
 		GetProduct(ctx context.Context, productId string) (*gen.Product, error)
+		GetProducts(ctx context.Context, withStock bool, productIds ...string) (*gen.Products, error)
 	}
 )
 
@@ -206,9 +207,21 @@ func (s *orderService) CreateOrder(ctx context.Context) (*entity.Order, error) {
 	orderItems := make([]entity.OrderItem, 0, len(cart.Items))
 	totalAmount := &gen.Money{}
 
+	var withStock = false
+	products, err := s.productServiceClient.GetProducts(ctx, withStock, cart.GetProductIDs()...)
+	if err != nil {
+		finalErr = errors.New("failed to fetch products")
+		return nil, finalErr
+	}
+
+	productsMap := make(map[string]*gen.Product)
+	for _, product := range products.Products {
+		productsMap[product.Id] = product
+	}
+
 	for _, item := range cart.Items {
-		product, err := s.productServiceClient.GetProduct(ctx, item.ProductID)
-		if err != nil {
+		product, ok := productsMap[item.ProductID]
+		if !ok {
 			finalErr = fmt.Errorf("failed to fetch product %s: %w", item.ProductID, err)
 			return nil, finalErr
 		}

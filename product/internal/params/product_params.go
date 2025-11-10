@@ -21,6 +21,15 @@ type GetProductRequest struct {
 	ProductID string `json:"product_id"`
 }
 
+type GetProductsRequest struct {
+	ProductIDs []string `json:"product_id"`
+	WithStock  bool     `json:"withStock"`
+}
+
 type GetProductResponse struct {
 	Product *ProductResponse `json:"product"`
+}
+
+type GetProductsResponse struct {
+	Products []ProductResponse `json:"products"`
 }

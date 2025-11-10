@@ -19,7 +19,7 @@ type (
 	productRepo interface {
 		ListProducts(ctx context.Context, req entity.ListProductRequest) ([]entity.Product, error)
 		TotalProducts(ctx context.Context, req entity.ListProductRequest) (int64, error)
-		GetProductByID(ctx context.Context, ID uuid.UUID) (*entity.Product, error)
+		GetProductByIDs(ctx context.Context, ID ...uuid.UUID) ([]entity.Product, error)
 	}
 
 	stockServiceClient interface {
@@ -81,15 +81,19 @@ func (s *productService) GetProduct(ctx context.Context, req params.GetProductRe
 		return nil, err
 	}
 
-	product, err := s.productRepo.GetProductByID(ctx, productID)
+	products, err := s.productRepo.GetProductByIDs(ctx, productID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, mockjson.DataNotFound) {
-			return nil, errs.NotFound{Message: "product not found"}
-		}
+		// if errors.Is(err, sql.ErrNoRows) || errors.Is(err, mockjson.DataNotFound) {
+		// 	return nil, errs.NotFound{Message: "product not found"}
+		// }
 		return nil, err
 	}
 
-	stocks, err := s.stockServiceClient.GetStocks(ctx, []string{product.ID.String()})
+	if len(products) == 0 {
+		return nil, errs.NotFound{Message: "product not found"}
+	}
+
+	stocks, err := s.stockServiceClient.GetStocks(ctx, []string{products[0].ID.String()})
 	if err != nil {
 		return nil, err
 	}
@@ -101,12 +105,59 @@ func (s *productService) GetProduct(ctx context.Context, req params.GetProductRe
 
 	return &params.GetProductResponse{
 		Product: &params.ProductResponse{
+			ID:          products[0].ID.String(), // Convert UUID to string
+			Name:        products[0].Name,
+			Description: products[0].Description,
+			Price:       products[0].Price,
+			ImageUrl:    products[0].ImageUrl,
+			Stock:       stock,
+		},
+	}, nil
+}
+
+func (s *productService) GetProducts(ctx context.Context, req params.GetProductsRequest) (*params.GetProductsResponse, error) {
+	productIDs := []uuid.UUID{}
+
+	for _, productID := range req.ProductIDs {
+		pUUID, err := uuid.Parse(productID)
+		if err != nil {
+			return nil, err
+		}
+		productIDs = append(productIDs, pUUID)
+	}
+
+	products, err := s.productRepo.GetProductByIDs(ctx, productIDs...)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, mockjson.DataNotFound) {
+			return nil, errs.NotFound{Message: "product not found"}
+		}
+		return nil, err
+	}
+
+	res := []params.ProductResponse{}
+	for _, product := range products {
+		var stock int64 = 0
+		if req.WithStock {
+			stocks, err := s.stockServiceClient.GetStocks(ctx, []string{product.ID.String()})
+			if err != nil {
+				return nil, err
+			}
+			for _, v := range stocks.Stocks {
+				stock += v.Quantity
+			}
+		}
+
+		res = append(res, params.ProductResponse{
 			ID:          product.ID.String(), // Convert UUID to string
 			Name:        product.Name,
 			Description: product.Description,
 			Price:       product.Price,
 			ImageUrl:    product.ImageUrl,
 			Stock:       stock,
-		},
+		})
+	}
+
+	return &params.GetProductsResponse{
+		Products: res,
 	}, nil
 }

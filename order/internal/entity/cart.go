@@ -17,3 +17,16 @@ type CartItem struct {
 	Price     *gen.Money
 	Stock     int64
 }
+
+func (c *Cart) GetProductIDs() []string {
+	if len(c.Items) == 0 {
+		return nil
+	}
+
+	res := []string{}
+	for _, item := range c.Items {
+		res = append(res, item.ProductID)
+	}
+
+	return res
+}

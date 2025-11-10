@@ -53,6 +53,6 @@ func (s *stockServiceClient) ReleaseStock(ctx context.Context, reservedStockIds 
 }
 
 // confirm stock after order is payed
-func (s *stockServiceClient) ConfirmStock(ctx context.Context, productIds []string) (*gen.StockList, error) {
-	return s.client.GetStocks(ctx, &gen.GetStockRequest{ProductIds: productIds})
+func (s *stockServiceClient) ConfirmStock(ctx context.Context, reservedStockIds []int64) (*gen.ConfirmedStockResponse, error) {
+	return s.client.ConfirmedStock(ctx, &gen.ConfirmedStockRequest{ReservedStockIds: reservedStockIds})
 }

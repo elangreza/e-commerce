@@ -19,6 +19,7 @@ type (
 	productService interface {
 		ListProducts(ctx context.Context, req params.PaginationParams) (*params.ListProductsResponse, error)
 		GetProduct(ctx context.Context, req params.GetProductRequest) (*params.GetProductResponse, error)
+		GetProducts(ctx context.Context, req params.GetProductsRequest) (*params.GetProductsResponse, error)
 	}
 
 	ProductServer struct {
@@ -89,5 +90,31 @@ func (s *ProductServer) GetProduct(ctx context.Context, req *gen.GetProductReque
 		Price:       response.Product.Price,
 		ImageUrl:    response.Product.ImageUrl,
 		Stock:       response.Product.Stock,
+	}, nil
+}
+
+func (s *ProductServer) GetProducts(ctx context.Context, req *gen.GetProductsRequest) (*gen.Products, error) {
+	responses, err := s.productService.GetProducts(ctx, params.GetProductsRequest{
+		ProductIDs: req.GetIds(),
+		WithStock:  req.WithStock,
+	})
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	products := []*gen.Product{}
+	for _, response := range responses.Products {
+		products = append(products, &gen.Product{
+			Id:          response.ID,
+			Name:        response.Name,
+			Description: response.Description,
+			ImageUrl:    response.ImageUrl,
+			Price:       response.Price,
+			Stock:       response.Stock,
+		})
+	}
+
+	return &gen.Products{
+		Products: products,
 	}, nil
 }
