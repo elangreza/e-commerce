@@ -12,6 +12,8 @@ import (
 	"github.com/elangreza/e-commerce/order/internal/constanta"
 	"github.com/elangreza/e-commerce/order/internal/entity"
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 //go:generate mockgen -source=product_service.go -destination=./mock/mock_product_service.go -package=mock
@@ -183,6 +185,12 @@ func (s *orderService) CreateOrder(ctx context.Context) (*entity.Order, error) {
 	}
 	if cart == nil || len(cart.Items) == 0 {
 		return nil, errors.New("cart is empty")
+	}
+
+	for _, item := range cart.Items {
+		if item.Quantity <= 0 {
+			return nil, status.Errorf(codes.InvalidArgument, "Order item quantity must be greater than 0")
+		}
 	}
 
 	reserveIDs, err := s.stockServiceClient.ReserveStock(ctx, cart.Items)
