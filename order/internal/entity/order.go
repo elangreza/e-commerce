@@ -14,22 +14,22 @@ type Order struct {
 	UserID         uuid.UUID             `json:"user_id" db:"user_id"` // can be uuid
 	Status         constanta.OrderStatus `json:"status" db:"status"`
 	TotalAmount    *gen.Money            `json:"total_amount" db:"total_amount"`
-	Currency       string                `json:"currency" db:"currency"`
-	CreatedAt      time.Time             `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time             `json:"updated_at" db:"updated_at"`
-	ShippedAt      *time.Time            `json:"shipped_at,omitempty" db:"shipped_at"`
-	CancelledAt    *time.Time            `json:"cancelled_at,omitempty" db:"cancelled_at"`
+	// Currency       string                `json:"currency" db:"currency"`
+	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
+	ShippedAt   *time.Time `json:"shipped_at,omitempty" db:"shipped_at"`
+	CancelledAt *time.Time `json:"cancelled_at,omitempty" db:"cancelled_at"`
 
 	Items []OrderItem
 }
 
 type OrderItem struct {
-	ID                uuid.UUID  `json:"id" db:"id"`
-	OrderID           uuid.UUID  `json:"order_id" db:"order_id"`
-	ProductID         string     `json:"product_id" db:"product_id"`
-	Name              string     `json:"name" db:"name"`
-	PricePerUnit      *gen.Money `json:"price_per_unit" db:"price_per_unit"`
-	Currency          string     `json:"currency" db:"currency"`
+	ID           uuid.UUID  `json:"id" db:"id"`
+	OrderID      uuid.UUID  `json:"order_id" db:"order_id"`
+	ProductID    string     `json:"product_id" db:"product_id"`
+	Name         string     `json:"name" db:"name"`
+	PricePerUnit *gen.Money `json:"price_per_unit" db:"price_per_unit"`
+	// Currency          string     `json:"currency" db:"currency"`
 	Quantity          int64      `json:"quantity" db:"quantity"`
 	TotalPricePerUnit *gen.Money `json:"total_price" db:"total_price"`
 }

@@ -21,13 +21,14 @@ message Empty {}
 message CartItem {
     string product_id = 1;
     int64 quantity = 2;
-    double price = 3;
+    string name = 3;
+    Money price = 4;
+    int64 actual_stock = 5;
 }
 
 message Cart {
     string id = 1;
     repeated CartItem items = 2;
-    double total_price = 3;
 }
 
 message OrderItem {

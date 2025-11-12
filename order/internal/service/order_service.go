@@ -22,12 +22,12 @@ type (
 	cartRepo interface {
 		GetCartByUserID(ctx context.Context, userID uuid.UUID) (*entity.Cart, error)
 		CreateCart(ctx context.Context, cart entity.Cart) error
-		UpdateCartItem(ctx context.Context, cartID uuid.UUID, item entity.CartItem) error
+		UpdateCartItem(ctx context.Context, item entity.CartItem) error
 	}
 
 	orderRepo interface {
 		CreateOrder(ctx context.Context, order entity.Order) (uuid.UUID, error)
-		GetOrderByIdempotencyKey(ctx context.Context, idempotencyKey string) (*entity.Order, error)
+		GetOrderByIdempotencyKey(ctx context.Context, idempotencyKey uuid.UUID) (*entity.Order, error)
 	}
 
 	stockServiceClient interface {
@@ -73,28 +73,23 @@ func (s *orderService) AddProductToCart(ctx context.Context, productId string, q
 		return err
 	}
 
+	product, err := s.productServiceClient.GetProduct(ctx, productId)
+	if err != nil {
+		return err
+	}
+	if product == nil {
+		return errors.New("product not found")
+	}
+
 	if cart == nil {
-		id, err := uuid.NewV7()
-		if err != nil {
-			return err
-		}
-
-		product, err := s.productServiceClient.GetProduct(ctx, productId)
-		if err != nil {
-			return err
-		}
-		if product == nil {
-			return errors.New("product not found")
-		}
-
 		cart = &entity.Cart{
-			ID:     id,
 			UserID: userID,
 			Items: []entity.CartItem{
 				{
 					ProductID: productId,
 					Quantity:  quantity,
-					Price:     product.Price,
+					Name:      product.GetName(),
+					Price:     product.GetPrice(),
 				},
 			},
 		}
@@ -103,12 +98,17 @@ func (s *orderService) AddProductToCart(ctx context.Context, productId string, q
 		if err != nil {
 			return err
 		}
+
+		// return early after cart creation
 		return nil
 	}
 
-	err = s.cartRepo.UpdateCartItem(ctx, cart.ID, entity.CartItem{
+	err = s.cartRepo.UpdateCartItem(ctx, entity.CartItem{
+		CartID:    cart.ID,
 		ProductID: productId,
 		Quantity:  quantity,
+		Name:      product.GetName(),
+		Price:     product.GetPrice(),
 	})
 	if err != nil {
 		return err
@@ -165,9 +165,9 @@ func (s *orderService) GetCart(ctx context.Context) (*entity.Cart, error) {
 
 	for i, item := range cart.Items {
 		if stock, ok := stockMap[item.ProductID]; ok {
-			cart.Items[i].Stock = stock
+			cart.Items[i].ActualStock = stock
 		} else {
-			cart.Items[i].Stock = 0
+			cart.Items[i].ActualStock = 0
 		}
 	}
 
@@ -175,7 +175,13 @@ func (s *orderService) GetCart(ctx context.Context) (*entity.Cart, error) {
 }
 
 func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (*entity.Order, error) {
-	ord, err := s.orderRepo.GetOrderByIdempotencyKey(ctx, idempotencyKey)
+
+	iKey, err := uuid.Parse(idempotencyKey)
+	if err != nil {
+		return nil, errors.New("invalid idempotency_key format")
+	}
+
+	ord, err := s.orderRepo.GetOrderByIdempotencyKey(ctx, iKey)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
@@ -223,7 +229,7 @@ func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (
 	// Enforce single-currency cart (required to safely sum totalAmount)
 	var cartCurrency string
 	orderItems := make([]entity.OrderItem, 0, len(cart.Items))
-	totalAmount := &gen.Money{}
+	totalAmount, _ := money.New(0, "IDR")
 
 	var withStock = false
 	products, err := s.productServiceClient.GetProducts(ctx, withStock, cart.GetProductIDs()...)
@@ -268,7 +274,6 @@ func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (
 			ProductID:         item.ProductID,
 			Name:              product.GetName(),
 			PricePerUnit:      price,
-			Currency:          price.GetCurrencyCode(),
 			Quantity:          item.Quantity,
 			TotalPricePerUnit: totalPricePerUnit,
 		})
@@ -281,11 +286,11 @@ func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (
 	}
 
 	order := entity.Order{
-		UserID:      userID,
-		Status:      constanta.OrderStatusPending,
-		Items:       orderItems,
-		TotalAmount: totalAmount,
-		Currency:    cartCurrency,
+		IdempotencyKey: iKey,
+		UserID:         userID,
+		Status:         constanta.OrderStatusPending,
+		Items:          orderItems,
+		TotalAmount:    totalAmount,
 	}
 
 	orderID, err := s.orderRepo.CreateOrder(ctx, order)

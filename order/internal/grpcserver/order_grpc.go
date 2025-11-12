@@ -36,7 +36,26 @@ func (o *OrderServer) AddProductToCart(ctx context.Context, req *gen.AddCartItem
 }
 
 func (o *OrderServer) GetCart(ctx context.Context, req *gen.Empty) (*gen.Cart, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCart not implemented")
+	cart, err := o.orderService.GetCart(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cartItems := []*gen.CartItem{}
+	for _, items := range cart.Items {
+		cartItems = append(cartItems, &gen.CartItem{
+			ProductId:   items.ProductID,
+			Quantity:    items.Quantity,
+			Name:        items.Name,
+			Price:       items.Price,
+			ActualStock: items.ActualStock,
+		})
+	}
+
+	return &gen.Cart{
+		Id:    cart.ID.String(),
+		Items: cartItems,
+	}, nil
 }
 
 func (o *OrderServer) CreateOrder(ctx context.Context, req *gen.CreateOrderRequest) (*gen.Order, error) {

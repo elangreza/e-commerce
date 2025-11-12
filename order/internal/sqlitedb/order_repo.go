@@ -5,8 +5,8 @@ import (
 	"database/sql"
 
 	"github/elangreza/e-commerce/pkg/dbsql"
+	"github/elangreza/e-commerce/pkg/money"
 
-	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/order/internal/entity"
 	"github.com/google/uuid"
 )
@@ -30,7 +30,8 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order entity.Order) (
 	}
 
 	err = dbsql.WithTransaction(r.db, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, `INSERT INTO orders(id, user_id, status, total_amount, currency) VALUES(?, ?, ?, ?, ?)`,
+		_, err := tx.ExecContext(ctx, `INSERT INTO orders(idempotency_key, id, user_id, status, total_amount, currency) VALUES(?, ?, ?, ?, ?, ?)`,
+			order.IdempotencyKey,
 			orderID,
 			order.UserID,
 			order.Status,
@@ -62,10 +63,10 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order entity.Order) (
 				orderID,
 				item.ProductID,
 				item.Name,
-				item.PricePerUnit,
-				item.Currency,
+				item.PricePerUnit.GetUnits(),
+				item.PricePerUnit.GetCurrencyCode(),
 				item.Quantity,
-				item.TotalPricePerUnit,
+				item.TotalPricePerUnit.GetUnits(),
 			)
 			if err != nil {
 				return err
@@ -81,7 +82,7 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order entity.Order) (
 	return orderID, nil
 }
 
-func (r *OrderRepository) GetOrderByIdempotencyKey(ctx context.Context, idempotencyKey string) (*entity.Order, error) {
+func (r *OrderRepository) GetOrderByIdempotencyKey(ctx context.Context, idempotencyKey uuid.UUID) (*entity.Order, error) {
 	q := `SELECT id, 
 	idempotency_key, 
 	user_id, 
@@ -94,6 +95,7 @@ func (r *OrderRepository) GetOrderByIdempotencyKey(ctx context.Context, idempote
 	cancelled_at FROM orders WHERE idempotency_key = ?;`
 
 	var totalAmount int64
+	var currencyCode string
 	var ord entity.Order
 	err := r.db.QueryRowContext(ctx, q, idempotencyKey).Scan(
 		&ord.IdempotencyKey,
@@ -101,7 +103,7 @@ func (r *OrderRepository) GetOrderByIdempotencyKey(ctx context.Context, idempote
 		&ord.UserID,
 		&ord.Status,
 		&totalAmount,
-		&ord.Currency,
+		&currencyCode,
 		&ord.CreatedAt,
 		&ord.UpdatedAt,
 		&ord.ShippedAt,
@@ -111,9 +113,9 @@ func (r *OrderRepository) GetOrderByIdempotencyKey(ctx context.Context, idempote
 		return nil, err
 	}
 
-	ord.TotalAmount = &gen.Money{
-		Units:        totalAmount,
-		CurrencyCode: ord.Currency,
+	ord.TotalAmount, err = money.New(totalAmount, currencyCode)
+	if err != nil {
+		return nil, err
 	}
 
 	qItems := `SELECT 
@@ -136,13 +138,14 @@ func (r *OrderRepository) GetOrderByIdempotencyKey(ctx context.Context, idempote
 		var orderItem entity.OrderItem
 		var pricePerUnit int64
 		var totalPricePerUnit int64
+		var currencyCode string
 		err = rows.Scan(
 			&orderItem.ID,
 			&orderItem.OrderID,
 			&orderItem.ProductID,
 			&orderItem.Name,
 			&pricePerUnit,
-			&orderItem.Currency,
+			&currencyCode,
 			&orderItem.Quantity,
 			&totalPricePerUnit,
 		)
@@ -150,14 +153,14 @@ func (r *OrderRepository) GetOrderByIdempotencyKey(ctx context.Context, idempote
 			return nil, err
 		}
 
-		orderItem.PricePerUnit = &gen.Money{
-			Units:        pricePerUnit,
-			CurrencyCode: orderItem.Currency,
+		orderItem.PricePerUnit, err = money.New(pricePerUnit, currencyCode)
+		if err != nil {
+			return nil, err
 		}
 
-		orderItem.TotalPricePerUnit = &gen.Money{
-			Units:        totalPricePerUnit,
-			CurrencyCode: orderItem.Currency,
+		orderItem.TotalPricePerUnit, err = money.New(totalPricePerUnit, currencyCode)
+		if err != nil {
+			return nil, err
 		}
 
 		ord.Items = append(ord.Items, orderItem)
