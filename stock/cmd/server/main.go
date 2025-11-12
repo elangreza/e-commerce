@@ -2,8 +2,8 @@ package main
 
 import (
 	"github/elangreza/e-commerce/pkg/dbsql"
+	"github/elangreza/e-commerce/pkg/interceptor"
 	"github/elangreza/e-commerce/stock/internal/grpcserver"
-	"github/elangreza/e-commerce/stock/internal/grpcserver/interceptor"
 	"github/elangreza/e-commerce/stock/internal/service"
 	"github/elangreza/e-commerce/stock/internal/sqlitedb"
 	"log"

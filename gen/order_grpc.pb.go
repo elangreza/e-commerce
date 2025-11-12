@@ -37,7 +37,7 @@ const (
 type OrderServiceClient interface {
 	AddProductToCart(ctx context.Context, in *AddCartItemRequest, opts ...grpc.CallOption) (*Empty, error)
 	GetCart(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Cart, error)
-	CreateOrder(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Order, error)
+	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*Order, error)
 }
 
 type orderServiceClient struct {
@@ -68,7 +68,7 @@ func (c *orderServiceClient) GetCart(ctx context.Context, in *Empty, opts ...grp
 	return out, nil
 }
 
-func (c *orderServiceClient) CreateOrder(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Order, error) {
+func (c *orderServiceClient) CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*Order, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Order)
 	err := c.cc.Invoke(ctx, OrderService_CreateOrder_FullMethodName, in, out, cOpts...)
@@ -91,7 +91,7 @@ func (c *orderServiceClient) CreateOrder(ctx context.Context, in *Empty, opts ..
 type OrderServiceServer interface {
 	AddProductToCart(context.Context, *AddCartItemRequest) (*Empty, error)
 	GetCart(context.Context, *Empty) (*Cart, error)
-	CreateOrder(context.Context, *Empty) (*Order, error)
+	CreateOrder(context.Context, *CreateOrderRequest) (*Order, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -108,7 +108,7 @@ func (UnimplementedOrderServiceServer) AddProductToCart(context.Context, *AddCar
 func (UnimplementedOrderServiceServer) GetCart(context.Context, *Empty) (*Cart, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCart not implemented")
 }
-func (UnimplementedOrderServiceServer) CreateOrder(context.Context, *Empty) (*Order, error) {
+func (UnimplementedOrderServiceServer) CreateOrder(context.Context, *CreateOrderRequest) (*Order, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOrder not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
@@ -169,7 +169,7 @@ func _OrderService_GetCart_Handler(srv interface{}, ctx context.Context, dec fun
 }
 
 func _OrderService_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(CreateOrderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func _OrderService_CreateOrder_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: OrderService_CreateOrder_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrderServiceServer).CreateOrder(ctx, req.(*Empty))
+		return srv.(OrderServiceServer).CreateOrder(ctx, req.(*CreateOrderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

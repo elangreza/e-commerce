@@ -27,6 +27,7 @@ type (
 
 	orderRepo interface {
 		CreateOrder(ctx context.Context, order entity.Order) (uuid.UUID, error)
+		GetOrderByIdempotencyKey(ctx context.Context, idempotencyKey string) (*entity.Order, error)
 	}
 
 	stockServiceClient interface {
@@ -173,7 +174,16 @@ func (s *orderService) GetCart(ctx context.Context) (*entity.Cart, error) {
 	return cart, nil
 }
 
-func (s *orderService) CreateOrder(ctx context.Context) (*entity.Order, error) {
+func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (*entity.Order, error) {
+	ord, err := s.orderRepo.GetOrderByIdempotencyKey(ctx, idempotencyKey)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+
+	if ord != nil {
+		return ord, nil
+	}
+
 	userID, ok := ctx.Value(globalcontanta.UserIDKey).(uuid.UUID)
 	if !ok {
 		return nil, errors.New("unauthorized")

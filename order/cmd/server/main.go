@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github/elangreza/e-commerce/pkg/dbsql"
+
+	"github/elangreza/e-commerce/pkg/interceptor"
 	"log"
 	"net"
 
@@ -41,7 +43,11 @@ func main() {
 	listener, err := net.Listen("tcp", address)
 	errChecker(err)
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			interceptor.UserIDParser(),
+		),
+	)
 	gen.RegisterOrderServiceServer(grpcServer, orderServer)
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)

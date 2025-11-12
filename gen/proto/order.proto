@@ -34,7 +34,7 @@ message OrderItem {
   string product_id = 1;
   string name = 3;
   Money price_per_unit = 4;
-  int32 quantity = 5;
+  int64 quantity = 5;
 }
 
 message Order {
@@ -43,6 +43,10 @@ message Order {
   repeated OrderItem items = 3;
   Money total_amount = 4;
   string status = 5;
+}
+
+message CreateOrderRequest {
+  string idempotency_key = 1;
 }
 
 // this service contains all the methods related to checkout and order management
@@ -54,5 +58,5 @@ message Order {
 service OrderService {
     rpc AddProductToCart(AddCartItemRequest) returns (Empty) {}
     rpc GetCart(Empty) returns (Cart) {}
-    rpc CreateOrder(Empty) returns (Order) {}
+    rpc CreateOrder(CreateOrderRequest) returns (Order) {}
 }

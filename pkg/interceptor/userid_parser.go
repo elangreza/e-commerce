@@ -2,7 +2,7 @@ package interceptor
 
 import (
 	"context"
-	"github/elangreza/e-commerce/stock/internal/constanta"
+	"github/elangreza/e-commerce/pkg/globalcontanta"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -15,14 +15,14 @@ func UserIDParser() grpc.UnaryServerInterceptor {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if ok {
 			// Get the userID from metadata
-			values := md.Get(string(constanta.UserIDKey))
+			values := md.Get(string(globalcontanta.UserIDKey))
 			if len(values) > 0 {
 				userID := values[0]
 				uid, err := uuid.Parse(userID)
 				if err != nil {
 					return nil, err
 				}
-				ctx = context.WithValue(ctx, constanta.UserIDKey, uid)
+				ctx = context.WithValue(ctx, globalcontanta.UserIDKey, uid)
 			}
 		}
 
