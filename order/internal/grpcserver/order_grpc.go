@@ -8,8 +8,6 @@ import (
 
 	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/order/internal/entity"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type (
@@ -32,7 +30,12 @@ func NewOrderServer(orderService orderService) *OrderServer {
 }
 
 func (o *OrderServer) AddProductToCart(ctx context.Context, req *gen.AddCartItemRequest) (*gen.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddProductToCart not implemented")
+	err := o.orderService.AddProductToCart(ctx, req.ProductId, req.Quantity)
+	if err != nil {
+		return nil, err
+	}
+
+	return &gen.Empty{}, nil
 }
 
 func (o *OrderServer) GetCart(ctx context.Context, req *gen.Empty) (*gen.Cart, error) {

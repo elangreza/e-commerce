@@ -11,9 +11,8 @@ option go_package = "github.com/elangreza/e-commerce/proto/gen";
 
 // add cart item one by one
 message AddCartItemRequest {
-    string cart_id = 1;
-    string product_id = 2;
-    int64 quantity = 3;
+    string product_id = 1;
+    int64 quantity = 2;
 }
 
 message Empty {}
