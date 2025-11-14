@@ -8,7 +8,6 @@ Built with the Saga orchestration pattern and a central orchestrator. The orches
 
 ## HIGH PRIORITY TASKS
 
-// TODO Add status High priority. Full visibility into order lifecycle
 // TODO Write integration tests. High priority. Confidence to ship faster
 
 ## MEDIUM PRIORITY TASKS

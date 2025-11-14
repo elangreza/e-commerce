@@ -3,6 +3,7 @@ CREATE TABLE orders (
     idempotency_key TEXT UNIQUE NOT NULL,
     user_id TEXT NOT NULL,
     status TEXT NOT NULL,
+    transaction_id TEXT,
     total_amount INTEGER NOT NULL,  -- e.g., 125000 (IDR), 12500 (USD $125.00)
     currency TEXT NOT NULL DEFAULT 'IDR',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,

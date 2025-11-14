@@ -3,6 +3,8 @@ package sqlitedb
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"time"
 
 	"github/elangreza/e-commerce/pkg/dbsql"
 	"github/elangreza/e-commerce/pkg/money"
@@ -167,4 +169,30 @@ func (r *OrderRepository) GetOrderByIdempotencyKey(ctx context.Context, idempote
 	}
 
 	return &ord, nil
+}
+
+func (r *OrderRepository) UpdateOrder(ctx context.Context, payloads map[string]any, orderID uuid.UUID) error {
+
+	q := `UPDATE orders SET `
+	fields := map[string]struct{}{
+		"transaction_id": {},
+		"status":         {},
+		"cancelled_at":   {},
+	}
+	args := []any{}
+	for key, payload := range payloads {
+		if _, ok := fields[key]; ok {
+			q += fmt.Sprintf(" %s = ?,", key)
+		}
+		args = append(args, payload)
+	}
+	q += "updated_at = ? WHERE id = ?;"
+	args = append(args, time.Now(), orderID)
+
+	_, err := r.db.ExecContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -28,6 +28,7 @@ type (
 	orderRepo interface {
 		CreateOrder(ctx context.Context, order entity.Order) (uuid.UUID, error)
 		GetOrderByIdempotencyKey(ctx context.Context, idempotencyKey uuid.UUID) (*entity.Order, error)
+		UpdateOrder(ctx context.Context, payloads map[string]any, orderID uuid.UUID) error
 	}
 
 	stockServiceClient interface {
@@ -40,6 +41,10 @@ type (
 		GetProduct(ctx context.Context, productId string) (*gen.Product, error)
 		GetProducts(ctx context.Context, withStock bool, productIds ...string) (*gen.Products, error)
 	}
+
+	paymentServiceClient interface {
+		ProcessPayment(ctx context.Context, totalAmount *gen.Money, orderID uuid.UUID) (*gen.ProcessPaymentResponse, error)
+	}
 )
 
 type orderService struct {
@@ -47,18 +52,22 @@ type orderService struct {
 	cartRepo             cartRepo
 	stockServiceClient   stockServiceClient
 	productServiceClient productServiceClient
+	paymentServiceClient paymentServiceClient
 }
 
 func NewOrderService(
 	orderRepo orderRepo,
 	cartRepo cartRepo,
 	stockServiceClient stockServiceClient,
-	productServiceClient productServiceClient) *orderService {
+	productServiceClient productServiceClient,
+	paymentServiceClient paymentServiceClient,
+) *orderService {
 	return &orderService{
 		orderRepo:            orderRepo,
 		cartRepo:             cartRepo,
 		stockServiceClient:   stockServiceClient,
 		productServiceClient: productServiceClient,
+		paymentServiceClient: paymentServiceClient,
 	}
 }
 
@@ -175,7 +184,6 @@ func (s *orderService) GetCart(ctx context.Context) (*entity.Cart, error) {
 }
 
 func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (*entity.Order, error) {
-
 	iKey, err := uuid.Parse(idempotencyKey)
 	if err != nil {
 		return nil, errors.New("invalid idempotency_key format")
@@ -185,7 +193,6 @@ func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
-
 	if ord != nil {
 		return ord, nil
 	}
@@ -209,23 +216,6 @@ func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (
 		}
 	}
 
-	reserveIDs, err := s.stockServiceClient.ReserveStock(ctx, cart.Items)
-	if err != nil {
-		return nil, fmt.Errorf("failed to reserve stock: %w", err)
-	}
-
-	// Defer stock release on any error after reservation
-	var finalOrder *entity.Order
-	var finalErr error
-	defer func() {
-		if finalErr != nil {
-			_, releaseErr := s.stockServiceClient.ReleaseStock(ctx, reserveIDs.GetReservedStockIds())
-			if releaseErr != nil {
-				// TODO: log error (e.g., s.logger.Error("failed to release reserved stock", ...))
-			}
-		}
-	}()
-
 	// Enforce single-currency cart (required to safely sum totalAmount)
 	var cartCurrency string
 	orderItems := make([]entity.OrderItem, 0, len(cart.Items))
@@ -234,8 +224,7 @@ func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (
 	var withStock = false
 	products, err := s.productServiceClient.GetProducts(ctx, withStock, cart.GetProductIDs()...)
 	if err != nil {
-		finalErr = errors.New("failed to fetch products")
-		return nil, finalErr
+		return nil, errors.New("failed to fetch products")
 	}
 
 	productsMap := make(map[string]*gen.Product)
@@ -246,28 +235,24 @@ func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (
 	for _, item := range cart.Items {
 		product, ok := productsMap[item.ProductID]
 		if !ok {
-			finalErr = fmt.Errorf("failed to fetch product %s: %w", item.ProductID, err)
-			return nil, finalErr
+			return nil, fmt.Errorf("failed to fetch product %s", item.ProductID)
 		}
 
 		price := product.GetPrice()
 		if price == nil {
-			finalErr = fmt.Errorf("product %s has no price", item.ProductID)
-			return nil, finalErr
+			return nil, fmt.Errorf("product %s has no price", item.ProductID)
 		}
 
 		// Validate currency consistency
 		if cartCurrency == "" {
 			cartCurrency = price.GetCurrencyCode()
 		} else if cartCurrency != price.GetCurrencyCode() {
-			finalErr = errors.New("mixed currencies in cart are not supported")
-			return nil, finalErr
+			return nil, errors.New("mixed currencies in cart are not supported")
 		}
 
 		totalPricePerUnit, err := money.MultiplyByInt(price, item.Quantity)
 		if err != nil {
-			finalErr = fmt.Errorf("failed to calculate total price for product %s: %w", item.ProductID, err)
-			return nil, finalErr
+			return nil, fmt.Errorf("failed to calculate total price for product %s: %w", item.ProductID, err)
 		}
 
 		orderItems = append(orderItems, entity.OrderItem{
@@ -280,26 +265,72 @@ func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (
 
 		totalAmount, err = money.Add(totalAmount, totalPricePerUnit)
 		if err != nil {
-			finalErr = fmt.Errorf("failed to accumulate total amount: %w", err)
-			return nil, finalErr
+			return nil, fmt.Errorf("failed to accumulate total amount: %w", err)
 		}
 	}
 
 	order := entity.Order{
 		IdempotencyKey: iKey,
 		UserID:         userID,
-		Status:         constanta.OrderStatusPending,
+		Status:         constanta.OrderStatusPending, // New initial status
 		Items:          orderItems,
 		TotalAmount:    totalAmount,
 	}
 
 	orderID, err := s.orderRepo.CreateOrder(ctx, order)
 	if err != nil {
-		finalErr = fmt.Errorf("failed to persist order: %w", err)
-		return nil, finalErr
+		return nil, fmt.Errorf("failed to persist order: %w", err)
+	}
+
+	// Create a rollback function for cleanup
+	rollback := func() error {
+		return s.orderRepo.UpdateOrder(ctx, map[string]any{
+			"status": constanta.OrderStatusFailed,
+		}, orderID)
+	}
+
+	// Reserve stock
+	reserveIDs, err := s.stockServiceClient.ReserveStock(ctx, cart.Items)
+	if err != nil {
+		rollbackErr := rollback()
+		if rollbackErr != nil {
+			// Log this error - partial failure state
+			fmt.Printf("Error during rollback: %v", rollbackErr)
+		}
+		return nil, fmt.Errorf("failed to reserve stock: %w", err)
+	}
+
+	// Process payment
+	paymentTransaction, err := s.paymentServiceClient.ProcessPayment(ctx, order.TotalAmount, orderID)
+	if err != nil {
+		// Release reserved stock
+		_, releaseErr := s.stockServiceClient.ReleaseStock(ctx, reserveIDs.GetReservedStockIds())
+		if releaseErr != nil {
+			// Log - stock might be stuck in reserved state
+			fmt.Printf("Error releasing stock during payment failure: %v", releaseErr)
+		}
+
+		rollbackErr := rollback()
+		if rollbackErr != nil {
+			fmt.Printf("Error during rollback: %v", rollbackErr)
+		}
+
+		return nil, fmt.Errorf("failed to process payment: %w", err)
+	}
+
+	// Update order status to indicate stock is reserved and include transaction ID
+	err = s.orderRepo.UpdateOrder(ctx, map[string]any{
+		"status":         constanta.OrderStatusStockReserved,
+		"transaction_id": paymentTransaction.TransactionId,
+	}, orderID)
+	if err != nil {
+		// Payment succeeded but status update failed - log this inconsistency
+		fmt.Printf("Payment succeeded but status update failed: %v", err)
+		// Consider whether to return an error or continue with partial success
+		// For now, we'll return the error to indicate the operation didn't complete successfully
+		return nil, fmt.Errorf("payment succeeded but failed to update order with transaction ID: %w", err)
 	}
 
 	order.ID = orderID
-	finalOrder = &order
-	return finalOrder, nil
+	return &order, nil
 }
