@@ -35,8 +35,10 @@ func main() {
 	errChecker(err)
 	productClient, err := client.NewProductClient()
 	errChecker(err)
+	paymentClient, err := client.NewPaymentClient()
+	errChecker(err)
 
-	orderService := service.NewOrderService(orderRepo, cartRepo, stockClient, productClient)
+	orderService := service.NewOrderService(orderRepo, cartRepo, stockClient, productClient, paymentClient)
 	orderServer := grpcserver.NewOrderServer(orderService)
 
 	address := fmt.Sprintf(":%v", 50051)
