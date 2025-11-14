@@ -6,4 +6,5 @@ use (
 	./product
 	./stock
 	./order
+	./payment
 )

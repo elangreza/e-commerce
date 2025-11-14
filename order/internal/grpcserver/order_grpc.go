@@ -62,7 +62,6 @@ func (o *OrderServer) GetCart(ctx context.Context, req *gen.Empty) (*gen.Cart, e
 }
 
 func (o *OrderServer) CreateOrder(ctx context.Context, req *gen.CreateOrderRequest) (*gen.Order, error) {
-
 	order, err := o.orderService.CreateOrder(ctx, req.IdempotencyKey)
 	if err != nil {
 		return nil, err
