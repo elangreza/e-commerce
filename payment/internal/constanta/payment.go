@@ -14,7 +14,7 @@ const (
 	PAID PaymentStatus = "PAID"
 	// if payment amount is less or more the actual amount
 	FAILED PaymentStatus = "FAILED"
-	// if payment is expired
+	// if payment is expired or being cancelled directly by service
 	CANCELLED PaymentStatus = "CANCELLED"
 )
 

@@ -5,6 +5,7 @@ package gen;
 
 // ignore the error not found in vscode
 import "money.proto";
+import "empty.proto";
 
 option go_package = "github.com/elangreza/e-commerce/proto/gen";
 
@@ -14,8 +15,6 @@ message AddCartItemRequest {
     string product_id = 1;
     int64 quantity = 2;
 }
-
-message Empty {}
 
 message CartItem {
     string product_id = 1;

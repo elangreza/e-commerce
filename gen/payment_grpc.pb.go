@@ -28,7 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PaymentServiceClient interface {
 	ProcessPayment(ctx context.Context, in *ProcessPaymentRequest, opts ...grpc.CallOption) (*ProcessPaymentResponse, error)
-	RollbackPayment(ctx context.Context, in *RollbackPaymentRequest, opts ...grpc.CallOption) (*RollbackPaymentResponse, error)
+	RollbackPayment(ctx context.Context, in *RollbackPaymentRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type paymentServiceClient struct {
@@ -49,9 +49,9 @@ func (c *paymentServiceClient) ProcessPayment(ctx context.Context, in *ProcessPa
 	return out, nil
 }
 
-func (c *paymentServiceClient) RollbackPayment(ctx context.Context, in *RollbackPaymentRequest, opts ...grpc.CallOption) (*RollbackPaymentResponse, error) {
+func (c *paymentServiceClient) RollbackPayment(ctx context.Context, in *RollbackPaymentRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RollbackPaymentResponse)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, PaymentService_RollbackPayment_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (c *paymentServiceClient) RollbackPayment(ctx context.Context, in *Rollback
 // for forward compatibility.
 type PaymentServiceServer interface {
 	ProcessPayment(context.Context, *ProcessPaymentRequest) (*ProcessPaymentResponse, error)
-	RollbackPayment(context.Context, *RollbackPaymentRequest) (*RollbackPaymentResponse, error)
+	RollbackPayment(context.Context, *RollbackPaymentRequest) (*Empty, error)
 	mustEmbedUnimplementedPaymentServiceServer()
 }
 
@@ -78,7 +78,7 @@ type UnimplementedPaymentServiceServer struct{}
 func (UnimplementedPaymentServiceServer) ProcessPayment(context.Context, *ProcessPaymentRequest) (*ProcessPaymentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessPayment not implemented")
 }
-func (UnimplementedPaymentServiceServer) RollbackPayment(context.Context, *RollbackPaymentRequest) (*RollbackPaymentResponse, error) {
+func (UnimplementedPaymentServiceServer) RollbackPayment(context.Context, *RollbackPaymentRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RollbackPayment not implemented")
 }
 func (UnimplementedPaymentServiceServer) mustEmbedUnimplementedPaymentServiceServer() {}

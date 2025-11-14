@@ -1,0 +1,8 @@
+// proto/common/money.proto
+syntax = "proto3";
+
+package gen;
+
+option go_package = "github.com/elangreza/e-commerce/proto/gen";
+
+message Empty {}

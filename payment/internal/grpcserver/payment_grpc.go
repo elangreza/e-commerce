@@ -12,39 +12,40 @@ import (
 )
 
 type (
-	orderService interface {
+	paymentService interface {
 		ProcessPayment(ctx context.Context, totalAmount *gen.Money, orderID string) (string, error)
+		RollbackPayment(ctx context.Context, transactionID string) error
 	}
 
-	OrderServer struct {
-		orderService orderService
+	PaymentServer struct {
+		paymentService paymentService
 		gen.UnimplementedPaymentServiceServer
 	}
 )
 
-func NewPaymentServer(orderService orderService) *OrderServer {
-	return &OrderServer{
-		orderService: orderService,
+func NewPaymentServer(ps paymentService) *PaymentServer {
+	return &PaymentServer{
+		paymentService: ps,
 	}
 }
 
-func (o *OrderServer) ProcessPayment(ctx context.Context, req *gen.ProcessPaymentRequest) (*gen.ProcessPaymentResponse, error) {
-	transactionID, err := o.orderService.ProcessPayment(ctx, req.TotalAmount, req.OrderId)
+func (p *PaymentServer) ProcessPayment(ctx context.Context, req *gen.ProcessPaymentRequest) (*gen.ProcessPaymentResponse, error) {
+	transactionID, err := p.paymentService.ProcessPayment(ctx, req.TotalAmount, req.OrderId)
 	if err != nil {
-		return &gen.ProcessPaymentResponse{
-			TransactionId: "",
-			Success:       false,
-			ErrorMessage:  err.Error(),
-		}, nil
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &gen.ProcessPaymentResponse{
 		TransactionId: transactionID,
-		Success:       true,
-		ErrorMessage:  "",
 	}, nil
 }
 
-func (o *OrderServer) RollbackPayment(ctx context.Context, req *gen.RollbackPaymentRequest) (*gen.RollbackPaymentResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RollbackPayment not implemented")
+func (p *PaymentServer) RollbackPayment(ctx context.Context, req *gen.RollbackPaymentRequest) (*gen.Empty, error) {
+
+	err := p.paymentService.RollbackPayment(ctx, req.TransactionId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &gen.Empty{}, nil
 }

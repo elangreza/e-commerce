@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"fmt"
 	"math/big"
 
 	"github.com/elangreza/e-commerce/gen"
@@ -47,7 +48,20 @@ func (p *paymentService) ProcessPayment(ctx context.Context, totalAmount *gen.Mo
 	return transactionID, nil
 }
 
-func (p *paymentService) RollbackPayment(ctx context.Context) error {
+func (p *paymentService) RollbackPayment(ctx context.Context, transactionID string) error {
+	payment, err := p.paymentRepo.GetPaymentStatusByTransactionID(ctx, transactionID)
+	if err != nil {
+		return err
+	}
+
+	if !(payment.Status == constanta.WAITING) {
+		return fmt.Errorf("payment must be waiting rollback the payment")
+	}
+
+	err = p.paymentRepo.UpdatePaymentStatusByTransactionID(ctx, constanta.CANCELLED, transactionID)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

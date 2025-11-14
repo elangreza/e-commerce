@@ -21,7 +21,7 @@ func main() {
 	// github.com/samber/slog-zap
 
 	db, err := dbsql.NewDbSql(
-		dbsql.WithSqliteDB("order.db"),
+		dbsql.WithSqliteDB("payment.db"),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
 	)
@@ -29,10 +29,10 @@ func main() {
 	defer db.Close()
 
 	paymentRepo := sqlitedb.NewPaymentRepository(db)
-	orderService := service.NewPaymentService(paymentRepo)
-	paymentServer := grpcserver.NewPaymentServer(orderService)
+	paymentService := service.NewPaymentService(paymentRepo)
+	paymentServer := grpcserver.NewPaymentServer(paymentService)
 
-	address := fmt.Sprintf(":%v", 50051)
+	address := fmt.Sprintf(":%v", 50053)
 	listener, err := net.Listen("tcp", address)
 	errChecker(err)
 

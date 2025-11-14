@@ -3,6 +3,7 @@ syntax = "proto3";
 package gen;
 
 // ignore the error not found in vscode
+import "empty.proto";
 import "money.proto";
 
 option go_package = "github.com/elangreza/e-commerce/proto/gen";
@@ -14,8 +15,6 @@ message ProcessPaymentRequest {
 
 message ProcessPaymentResponse {
   string transaction_id = 1;
-  bool success = 2;
-  string error_message = 3;
 }
 
 message RollbackPaymentRequest {
@@ -23,12 +22,7 @@ message RollbackPaymentRequest {
   string reason = 2;
 }
 
-message RollbackPaymentResponse {
-  bool success = 1;
-  string error_message = 2;
-}
-
 service PaymentService {
     rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse) {}
-    rpc RollbackPayment(RollbackPaymentRequest) returns (RollbackPaymentResponse) {}
+    rpc RollbackPayment(RollbackPaymentRequest) returns (Empty) {}
 }
