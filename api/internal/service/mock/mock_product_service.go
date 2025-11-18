@@ -13,8 +13,8 @@ import (
 	context "context"
 	reflect "reflect"
 
+	entity "github.com/elangreza/e-commerce/api/internal/entity"
 	gen "github.com/elangreza/e-commerce/gen"
-	entity "github.com/elangreza/e-commerce/product/internal/entity"
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )

@@ -7,4 +7,5 @@ use (
 	./stock
 	./order
 	./payment
+	./api
 )

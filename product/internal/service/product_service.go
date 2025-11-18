@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/product/internal/entity"
@@ -13,6 +14,8 @@ import (
 	params "github.com/elangreza/e-commerce/product/internal/params"
 	"github.com/elangreza/e-commerce/product/pkg/errs"
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type (
@@ -37,25 +40,44 @@ func NewProductService(productRepo productRepo, stockServiceClient stockServiceC
 type productService struct {
 	productRepo        productRepo
 	stockServiceClient stockServiceClient
+	gen.UnimplementedProductServiceServer
 }
 
-func (s *productService) ListProducts(ctx context.Context, req params.PaginationParams) (*params.ListProductsResponse, error) {
-	reqParams := entity.ListProductRequest{
-		Search:      req.Search,
-		Page:        req.Page,
-		Limit:       req.Limit,
-		OrderClause: req.GetOrderClause(),
+func (p *productService) ListProducts(ctx context.Context, req *gen.ListProductsRequest) (*gen.ListProductsResponse, error) {
+	paginationParams := params.PaginationParams{
+		Sorts:  strings.Split(req.GetSortBy(), ","),
+		Search: req.GetSearch(),
+		Limit:  req.GetLimit(),
+		Page:   req.GetPage(),
 	}
 
-	products, err := s.productRepo.ListProducts(ctx, reqParams)
+	paginationParams.SetValidSortKey("updated_at", "name", "price")
+
+	if err := paginationParams.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	reqParams := entity.ListProductRequest{
+		Search:      paginationParams.Search,
+		Page:        paginationParams.Page,
+		Limit:       paginationParams.Limit,
+		OrderClause: paginationParams.GetOrderClause(),
+	}
+
+	products, err := p.productRepo.ListProducts(ctx, reqParams)
 	if err != nil {
 		return nil, err
 	}
 
-	productResponses := make([]params.ProductResponse, len(products))
+	total, err := p.productRepo.TotalProducts(ctx, reqParams)
+	if err != nil {
+		return nil, err
+	}
+
+	productResponses := make([]*gen.Product, len(products))
 	for i, product := range products {
-		productResponses[i] = params.ProductResponse{
-			ID:          product.ID.String(), // Convert UUID to string
+		productResponses[i] = &gen.Product{
+			Id:          product.ID.String(),
 			Name:        product.Name,
 			Description: product.Description,
 			Price:       product.Price,
@@ -63,25 +85,20 @@ func (s *productService) ListProducts(ctx context.Context, req params.Pagination
 		}
 	}
 
-	total, err := s.productRepo.TotalProducts(ctx, reqParams)
-	if err != nil {
-		return nil, err
-	}
-
-	return &params.ListProductsResponse{
+	return &gen.ListProductsResponse{
 		Products:   productResponses,
 		Total:      total,
-		TotalPages: req.GetTotalPages(total),
+		TotalPages: paginationParams.GetTotalPages(total),
 	}, nil
 }
 
-func (s *productService) GetProduct(ctx context.Context, req params.GetProductRequest) (*params.GetProductResponse, error) {
-	productID, err := uuid.Parse(req.ProductID)
+func (p *productService) GetProduct(ctx context.Context, req *gen.GetProductRequest) (*gen.Product, error) {
+	productID, err := uuid.Parse(req.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	products, err := s.productRepo.GetProductByIDs(ctx, productID)
+	products, err := p.productRepo.GetProductByIDs(ctx, productID)
 	if err != nil {
 		// if errors.Is(err, sql.ErrNoRows) || errors.Is(err, mockjson.DataNotFound) {
 		// 	return nil, errs.NotFound{Message: "product not found"}
@@ -93,7 +110,7 @@ func (s *productService) GetProduct(ctx context.Context, req params.GetProductRe
 		return nil, errs.NotFound{Message: "product not found"}
 	}
 
-	stocks, err := s.stockServiceClient.GetStocks(ctx, []string{products[0].ID.String()})
+	stocks, err := p.stockServiceClient.GetStocks(ctx, []string{products[0].ID.String()})
 	if err != nil {
 		return nil, err
 	}
@@ -103,22 +120,20 @@ func (s *productService) GetProduct(ctx context.Context, req params.GetProductRe
 		stock += v.Quantity
 	}
 
-	return &params.GetProductResponse{
-		Product: &params.ProductResponse{
-			ID:          products[0].ID.String(), // Convert UUID to string
-			Name:        products[0].Name,
-			Description: products[0].Description,
-			Price:       products[0].Price,
-			ImageUrl:    products[0].ImageUrl,
-			Stock:       stock,
-		},
+	return &gen.Product{
+		Id:          products[0].ID.String(), // Convert UUID to string
+		Name:        products[0].Name,
+		Description: products[0].Description,
+		Price:       products[0].Price,
+		ImageUrl:    products[0].ImageUrl,
+		Stock:       stock,
 	}, nil
 }
 
-func (s *productService) GetProducts(ctx context.Context, req params.GetProductsRequest) (*params.GetProductsResponse, error) {
+func (p *productService) GetProducts(ctx context.Context, req *gen.GetProductsRequest) (*gen.Products, error) {
 	productIDs := []uuid.UUID{}
 
-	for _, productID := range req.ProductIDs {
+	for _, productID := range req.Ids {
 		pUUID, err := uuid.Parse(productID)
 		if err != nil {
 			return nil, err
@@ -126,7 +141,7 @@ func (s *productService) GetProducts(ctx context.Context, req params.GetProducts
 		productIDs = append(productIDs, pUUID)
 	}
 
-	products, err := s.productRepo.GetProductByIDs(ctx, productIDs...)
+	products, err := p.productRepo.GetProductByIDs(ctx, productIDs...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, mockjson.DataNotFound) {
 			return nil, errs.NotFound{Message: "product not found"}
@@ -134,11 +149,11 @@ func (s *productService) GetProducts(ctx context.Context, req params.GetProducts
 		return nil, err
 	}
 
-	res := []params.ProductResponse{}
+	res := []*gen.Product{}
 	for _, product := range products {
 		var stock int64 = 0
 		if req.WithStock {
-			stocks, err := s.stockServiceClient.GetStocks(ctx, []string{product.ID.String()})
+			stocks, err := p.stockServiceClient.GetStocks(ctx, []string{product.ID.String()})
 			if err != nil {
 				return nil, err
 			}
@@ -147,8 +162,8 @@ func (s *productService) GetProducts(ctx context.Context, req params.GetProducts
 			}
 		}
 
-		res = append(res, params.ProductResponse{
-			ID:          product.ID.String(), // Convert UUID to string
+		res = append(res, &gen.Product{
+			Id:          product.ID.String(), // Convert UUID to string
 			Name:        product.Name,
 			Description: product.Description,
 			Price:       product.Price,
@@ -157,7 +172,7 @@ func (s *productService) GetProducts(ctx context.Context, req params.GetProducts
 		})
 	}
 
-	return &params.GetProductsResponse{
+	return &gen.Products{
 		Products: res,
 	}, nil
 }
