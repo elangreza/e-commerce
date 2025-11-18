@@ -14,6 +14,8 @@ import (
 	"github.com/elangreza/e-commerce/order/internal/service"
 	"github.com/elangreza/e-commerce/order/internal/sqlitedb"
 	"google.golang.org/grpc"
+
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {

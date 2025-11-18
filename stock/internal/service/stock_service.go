@@ -5,8 +5,8 @@ import (
 	"errors"
 	"github/elangreza/e-commerce/stock/internal/constanta"
 	"github/elangreza/e-commerce/stock/internal/entity"
-	"github/elangreza/e-commerce/stock/internal/params"
 
+	"github.com/elangreza/e-commerce/gen"
 	"github.com/google/uuid"
 )
 
@@ -20,6 +20,7 @@ type (
 
 	StockService struct {
 		repo stockRepo
+		gen.UnimplementedStockServiceServer
 	}
 )
 
@@ -29,21 +30,38 @@ func NewStockService(repo stockRepo) *StockService {
 	}
 }
 
-func (s *StockService) GetStocks(ctx context.Context, productIDs []string) ([]*entity.Stock, error) {
-	return s.repo.GetStocks(ctx, productIDs)
+func (s *StockService) GetStocks(ctx context.Context, req *gen.GetStockRequest) (*gen.StockList, error) {
+	stocks, err := s.repo.GetStocks(ctx, req.ProductIds)
+	if err != nil {
+		return nil, err
+	}
+	res := []*gen.Stock{}
+	for _, stock := range stocks {
+		res = append(res, &gen.Stock{
+			ProductId: stock.ProductID.String(),
+			Quantity:  stock.Quantity,
+		})
+	}
+	return &gen.StockList{
+		Stocks: res,
+	}, nil
 }
 
-func (s *StockService) ReserveStock(ctx context.Context, reserveStock params.ReserveStock) ([]int64, error) {
-
+func (s *StockService) ReserveStock(ctx context.Context, req *gen.ReserveStockRequest) (*gen.ReserveStockResponse, error) {
 	userID, ok := ctx.Value(constanta.UserIDKey).(uuid.UUID)
 	if !ok {
 		return nil, errors.New("unauthorized")
 	}
 
-	stocks := make([]entity.Stock, len(reserveStock.Stocks))
-	for i, stock := range reserveStock.Stocks {
+	stocks := make([]entity.Stock, len(req.Stocks))
+	for i, stock := range req.Stocks {
+		productID, err := uuid.Parse(stock.ProductId)
+		if err != nil {
+			return nil, err
+		}
+
 		stocks[i] = entity.Stock{
-			ProductID: stock.ProductID,
+			ProductID: productID,
 			Quantity:  stock.Quantity,
 		}
 	}
@@ -56,28 +74,31 @@ func (s *StockService) ReserveStock(ctx context.Context, reserveStock params.Res
 		return nil, err
 	}
 
-	return reservedStockIDs, nil
+	return &gen.ReserveStockResponse{
+		ReservedStockIds: reservedStockIDs,
+	}, nil
 }
 
-func (s *StockService) ReleaseStock(ctx context.Context, releaseStock params.ReleaseStock) ([]int64, error) {
-
+func (s *StockService) ReleaseStock(ctx context.Context, req *gen.ReleaseStockRequest) (*gen.ReleaseStockResponse, error) {
 	userID, ok := ctx.Value(constanta.UserIDKey).(uuid.UUID)
 	if !ok {
 		return nil, errors.New("unauthorized")
 	}
 
 	releasedStockIDs, err := s.repo.ReleaseStock(ctx, entity.ReleaseStock{
-		ReservedStockIDs: releaseStock.ReservedStockIDs,
+		ReservedStockIDs: req.ReservedStockIds,
 		UserID:           userID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return releasedStockIDs, nil
+	return &gen.ReleaseStockResponse{
+		ReleasedStockIds: releasedStockIDs,
+	}, nil
 }
 
-func (s *StockService) ConfirmStock(ctx context.Context, confirmedStock params.ConfirmStock) ([]int64, error) {
+func (s *StockService) ConfirmedStock(ctx context.Context, req *gen.ConfirmedStockRequest) (*gen.ConfirmedStockResponse, error) {
 
 	userID, ok := ctx.Value(constanta.UserIDKey).(uuid.UUID)
 	if !ok {
@@ -85,12 +106,14 @@ func (s *StockService) ConfirmStock(ctx context.Context, confirmedStock params.C
 	}
 
 	confirmedStockIDs, err := s.repo.ConfirmStock(ctx, entity.ConfirmStock{
-		ReservedStockIDs: confirmedStock.ReservedStockIDs,
+		ReservedStockIDs: req.ReservedStockIds,
 		UserID:           userID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return confirmedStockIDs, nil
+	return &gen.ConfirmedStockResponse{
+		ConfirmedStockIds: confirmedStockIDs,
+	}, nil
 }
