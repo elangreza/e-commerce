@@ -33,3 +33,23 @@ type OrderItem struct {
 	Quantity          int64      `json:"quantity" db:"quantity"`
 	TotalPricePerUnit *gen.Money `json:"total_price" db:"total_price"`
 }
+
+func (ord *Order) GetGenOrder() *gen.Order {
+	orderItem := []*gen.OrderItem{}
+	for _, oi := range ord.Items {
+		orderItem = append(orderItem, &gen.OrderItem{
+			ProductId:    oi.ProductID,
+			Name:         oi.Name,
+			PricePerUnit: oi.PricePerUnit,
+			Quantity:     oi.Quantity,
+		})
+	}
+	return &gen.Order{
+		Id:             ord.ID.String(),
+		UserId:         ord.UserID.String(),
+		Items:          orderItem,
+		TotalAmount:    ord.TotalAmount,
+		Status:         ord.Status.String(),
+		IdempotencyKey: ord.IdempotencyKey.String(),
+	}
+}

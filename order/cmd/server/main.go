@@ -4,16 +4,12 @@ import (
 	"fmt"
 	"github/elangreza/e-commerce/pkg/dbsql"
 
-	"github/elangreza/e-commerce/pkg/interceptor"
 	"log"
-	"net"
 
-	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/order/internal/client"
-	"github.com/elangreza/e-commerce/order/internal/grpcserver"
+	"github.com/elangreza/e-commerce/order/internal/server"
 	"github.com/elangreza/e-commerce/order/internal/service"
 	"github.com/elangreza/e-commerce/order/internal/sqlitedb"
-	"google.golang.org/grpc"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -40,23 +36,24 @@ func main() {
 	paymentClient, err := client.NewPaymentClient()
 	errChecker(err)
 
-	orderService := service.NewOrderService(orderRepo, cartRepo, stockClient, productClient, paymentClient)
-	orderServer := grpcserver.NewOrderServer(orderService)
+	orderService := service.NewOrderService(
+		orderRepo,
+		cartRepo,
+		stockClient,
+		productClient,
+		paymentClient)
 
+	srv := server.New(orderService)
 	address := fmt.Sprintf(":%v", 50051)
-	listener, err := net.Listen("tcp", address)
-	errChecker(err)
-
-	grpcServer := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(
-			interceptor.UserIDParser(),
-		),
-	)
-	gen.RegisterOrderServiceServer(grpcServer, orderServer)
-	if err := grpcServer.Serve(listener); err != nil {
+	if err := srv.Start(address); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 		return
 	}
+	// grpcServer := grpc.NewServer(
+	// 	grpc.ChainUnaryInterceptor(
+	// 		interceptor.UserIDParser(),
+	// 	),
+	// )
 }
 
 func errChecker(err error) {

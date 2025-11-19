@@ -39,3 +39,26 @@ func (c *Cart) GetProductIDs() []string {
 
 	return res
 }
+
+func (c *Cart) GetGenCart() *gen.Cart {
+	res := &gen.Cart{
+		Id:    c.ID.String(),
+		Items: []*gen.CartItem{},
+	}
+
+	if len(c.Items) == 0 {
+		return res
+	}
+
+	for _, items := range c.Items {
+		res.Items = append(res.Items, &gen.CartItem{
+			ProductId:   items.ProductID,
+			Quantity:    items.Quantity,
+			Name:        items.ProductID,
+			Price:       items.Price,
+			ActualStock: items.ActualStock,
+		})
+	}
+
+	return res
+}

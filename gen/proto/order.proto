@@ -37,11 +37,12 @@ message OrderItem {
 }
 
 message Order {
-  string id = 1;
-  string user_id = 2;
-  repeated OrderItem items = 3;
-  Money total_amount = 4;
-  string status = 5;
+  string idempotency_key = 1;
+  string id = 2;
+  string user_id = 3;
+  repeated OrderItem items = 4;
+  Money total_amount = 5;
+  string status = 6;
 }
 
 message CreateOrderRequest {

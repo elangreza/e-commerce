@@ -53,6 +53,7 @@ type orderService struct {
 	stockServiceClient   stockServiceClient
 	productServiceClient productServiceClient
 	paymentServiceClient paymentServiceClient
+	gen.UnimplementedOrderServiceServer
 }
 
 func NewOrderService(
@@ -71,23 +72,23 @@ func NewOrderService(
 	}
 }
 
-func (s *orderService) AddProductToCart(ctx context.Context, productId string, quantity int64) error {
+func (s *orderService) AddProductToCart(ctx context.Context, req *gen.AddCartItemRequest) (*gen.Empty, error) {
 	userID, ok := ctx.Value(globalcontanta.UserIDKey).(uuid.UUID)
 	if !ok {
-		return errors.New("unauthorized")
+		return nil, errors.New("unauthorized")
 	}
 
 	cart, err := s.cartRepo.GetCartByUserID(ctx, userID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return err
+		return nil, err
 	}
 
-	product, err := s.productServiceClient.GetProduct(ctx, productId)
+	product, err := s.productServiceClient.GetProduct(ctx, req.ProductId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if product == nil {
-		return errors.New("product not found")
+		return nil, errors.New("product not found")
 	}
 
 	if cart == nil {
@@ -95,8 +96,8 @@ func (s *orderService) AddProductToCart(ctx context.Context, productId string, q
 			UserID: userID,
 			Items: []entity.CartItem{
 				{
-					ProductID: productId,
-					Quantity:  quantity,
+					ProductID: req.ProductId,
+					Quantity:  req.Quantity,
 					Name:      product.GetName(),
 					Price:     product.GetPrice(),
 				},
@@ -105,28 +106,28 @@ func (s *orderService) AddProductToCart(ctx context.Context, productId string, q
 
 		err = s.cartRepo.CreateCart(ctx, *cart)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// return early after cart creation
-		return nil
+		return &gen.Empty{}, nil
 	}
 
 	err = s.cartRepo.UpdateCartItem(ctx, entity.CartItem{
 		CartID:    cart.ID,
-		ProductID: productId,
-		Quantity:  quantity,
+		ProductID: req.ProductId,
+		Quantity:  req.Quantity,
 		Name:      product.GetName(),
 		Price:     product.GetPrice(),
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &gen.Empty{}, nil
 }
 
-func (s *orderService) GetCart(ctx context.Context) (*entity.Cart, error) {
+func (s *orderService) GetCart(ctx context.Context, req *gen.Empty) (*gen.Cart, error) {
 	userID, ok := ctx.Value(globalcontanta.UserIDKey).(uuid.UUID)
 	if !ok {
 		return nil, errors.New("unauthorized")
@@ -146,15 +147,11 @@ func (s *orderService) GetCart(ctx context.Context) (*entity.Cart, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &entity.Cart{
-			Items: []entity.CartItem{},
-		}, nil
+		return cart.GetGenCart(), nil
 	}
 
 	if len(cart.Items) == 0 {
-		return &entity.Cart{
-			Items: []entity.CartItem{},
-		}, nil
+		return cart.GetGenCart(), nil
 	}
 
 	productIDs := make([]string, 0, len(cart.Items))
@@ -180,21 +177,21 @@ func (s *orderService) GetCart(ctx context.Context) (*entity.Cart, error) {
 		}
 	}
 
-	return cart, nil
+	return cart.GetGenCart(), nil
 }
 
-func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (*entity.Order, error) {
-	iKey, err := uuid.Parse(idempotencyKey)
+func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequest) (*gen.Order, error) {
+	idempotencyKey, err := uuid.Parse(req.IdempotencyKey)
 	if err != nil {
 		return nil, errors.New("invalid idempotency_key format")
 	}
 
-	ord, err := s.orderRepo.GetOrderByIdempotencyKey(ctx, iKey)
+	ord, err := s.orderRepo.GetOrderByIdempotencyKey(ctx, idempotencyKey)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
 	if ord != nil {
-		return ord, nil
+		return ord.GetGenOrder(), nil
 	}
 
 	userID, ok := ctx.Value(globalcontanta.UserIDKey).(uuid.UUID)
@@ -270,7 +267,7 @@ func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (
 	}
 
 	order := entity.Order{
-		IdempotencyKey: iKey,
+		IdempotencyKey: idempotencyKey,
 		UserID:         userID,
 		Status:         constanta.OrderStatusPending, // New initial status
 		Items:          orderItems,
@@ -332,5 +329,5 @@ func (s *orderService) CreateOrder(ctx context.Context, idempotencyKey string) (
 	}
 
 	order.ID = orderID
-	return &order, nil
+	return ord.GetGenOrder(), nil
 }
