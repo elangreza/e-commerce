@@ -44,7 +44,7 @@ func main() {
 		paymentClient)
 
 	srv := server.New(orderService)
-	address := fmt.Sprintf(":%v", 50051)
+	address := fmt.Sprintf(":%v", 50054)
 	if err := srv.Start(address); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 		return
