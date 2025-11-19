@@ -23,6 +23,7 @@ type (
 
 type paymentService struct {
 	paymentRepo paymentRepo
+	gen.UnimplementedPaymentServiceServer
 }
 
 func NewPaymentService(
@@ -33,37 +34,39 @@ func NewPaymentService(
 	}
 }
 
-func (p *paymentService) ProcessPayment(ctx context.Context, totalAmount *gen.Money, orderID string) (string, error) {
+func (p *paymentService) ProcessPayment(ctx context.Context, req *gen.ProcessPaymentRequest) (*gen.ProcessPaymentResponse, error) {
 	transactionID := generateBase62ID(defaultLength)
 	err := p.paymentRepo.CreatePayment(ctx, entity.Payment{
 		Status:        constanta.WAITING,
-		TotalAmount:   totalAmount,
+		TotalAmount:   req.TotalAmount,
 		TransactionID: transactionID,
-		OrderID:       orderID,
+		OrderID:       req.OrderId,
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return transactionID, nil
+	return &gen.ProcessPaymentResponse{
+		TransactionId: transactionID,
+	}, nil
 }
 
-func (p *paymentService) RollbackPayment(ctx context.Context, transactionID string) error {
-	payment, err := p.paymentRepo.GetPaymentStatusByTransactionID(ctx, transactionID)
+func (p *paymentService) RollbackPayment(ctx context.Context, req *gen.RollbackPaymentRequest) (*gen.Empty, error) {
+	payment, err := p.paymentRepo.GetPaymentStatusByTransactionID(ctx, req.TransactionId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !(payment.Status == constanta.WAITING) {
-		return fmt.Errorf("payment must be waiting rollback the payment")
+		return nil, fmt.Errorf("payment must be waiting rollback the payment")
 	}
 
-	err = p.paymentRepo.UpdatePaymentStatusByTransactionID(ctx, constanta.CANCELLED, transactionID)
+	err = p.paymentRepo.UpdatePaymentStatusByTransactionID(ctx, constanta.CANCELLED, req.TransactionId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &gen.Empty{}, nil
 }
 
 const (

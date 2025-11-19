@@ -3,16 +3,12 @@ package main
 import (
 	"fmt"
 	"github/elangreza/e-commerce/pkg/dbsql"
-	"github/elangreza/e-commerce/pkg/interceptor"
 
 	"log"
-	"net"
 
-	"github.com/elangreza/e-commerce/gen"
-	"github.com/elangreza/e-commerce/payment/internal/grpcserver"
+	"github.com/elangreza/e-commerce/payment/internal/server"
 	"github.com/elangreza/e-commerce/payment/internal/service"
 	"github.com/elangreza/e-commerce/payment/internal/sqlitedb"
-	"google.golang.org/grpc"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -32,19 +28,11 @@ func main() {
 
 	paymentRepo := sqlitedb.NewPaymentRepository(db)
 	paymentService := service.NewPaymentService(paymentRepo)
-	paymentServer := grpcserver.NewPaymentServer(paymentService)
+	srv := server.New(paymentService)
 
 	address := fmt.Sprintf(":%v", 50053)
-	listener, err := net.Listen("tcp", address)
-	errChecker(err)
 
-	grpcServer := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(
-			interceptor.UserIDParser(),
-		),
-	)
-	gen.RegisterPaymentServiceServer(grpcServer, paymentServer)
-	if err := grpcServer.Serve(listener); err != nil {
+	if err := srv.Start(address); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 		return
 	}
