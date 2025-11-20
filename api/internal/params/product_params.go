@@ -7,9 +7,22 @@ type ListProductsRequest struct {
 	SortBy string `json:"sort_by"`
 }
 
+type Money struct {
+	Units        int64  `json:"units,omitempty"`
+	CurrencyCode string `json:"currency_code,omitempty"`
+}
+
+type Product struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	ImageUrl    string `json:"image_url"`
+	Price       *Money `json:"price"`
+	Stock       int64  `json:"stock,omitempty"`
+}
+
 type ListProductsResponse struct {
-	Search string `json:"search"`
-	Limit  int64  `json:"limit"`
-	Page   int64  `json:"page"`
-	SortBy string `json:"sort_by"`
+	Products   []*Product `json:"products,omitempty"`
+	Total      int64      `json:"total,omitempty"`
+	TotalPages int64      `json:"total_pages,omitempty"`
 }

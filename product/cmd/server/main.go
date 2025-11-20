@@ -31,7 +31,7 @@ func main() {
 	stockClient, err := client.NewStockClient()
 	errChecker(err)
 
-	address := fmt.Sprintf("localhost:%v", 50051)
+	address := fmt.Sprintf("localhost:%v", 50050)
 
 	productService := service.NewProductService(productRepo, stockClient)
 	srv := server.New(productService)
