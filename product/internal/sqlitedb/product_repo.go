@@ -3,6 +3,7 @@ package sqlitedb
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github/elangreza/e-commerce/pkg/money"
 	"strings"
 
@@ -88,8 +89,13 @@ func (pm *ProductRepository) GetProductByIDs(ctx context.Context, productID ...u
 	from products
 	where id = ?`
 	args := []any{}
-	arg, qMarks := buildPlaceHoldersInClause(productID)
-	args = append(args, arg...)
+	qMarks := buildPlaceHoldersInClause(len(productID))
+
+	for _, v := range productID {
+		args = append(args, v)
+	}
+
+	fmt.Println(args)
 	if len(productID) > 1 {
 		q = `select
 		id,
@@ -137,11 +143,11 @@ func (pm *ProductRepository) GetProductByIDs(ctx context.Context, productID ...u
 	return products, nil
 }
 
-func buildPlaceHoldersInClause(items ...any) ([]any, string) {
-	if len(items) == 0 {
-		return nil, ""
+func buildPlaceHoldersInClause(lenitems int) string {
+	if lenitems == 0 {
+		return ""
 	}
 
-	qMarks := strings.Repeat("?,", len(items)-1) + "?"
-	return items, qMarks
+	qMarks := strings.Repeat("?,", lenitems-1) + "?"
+	return qMarks
 }

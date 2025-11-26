@@ -16,6 +16,7 @@ func New(address string, handler *handler.ProductHandler) *Server {
 	// Setup routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/products", handler.ListProducts())
+	mux.HandleFunc("GET /api/product", handler.GetProductsDetails())
 
 	httpServer := &http.Server{
 		Addr:    address,

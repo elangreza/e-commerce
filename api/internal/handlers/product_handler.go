@@ -6,16 +6,17 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/elangreza/e-commerce/api/internal/params"
-	"github.com/elangreza/e-commerce/gen"
 )
 
 type (
 	productService interface {
 		ListProducts(ctx context.Context, req params.ListProductsRequest) (*params.ListProductsResponse, error)
+		GetProductsDetails(ctx context.Context, req params.GetProductsDetail) (*params.ListProductsResponse, error)
 	}
 
 	ProductHandler struct {
@@ -62,10 +63,44 @@ func (s *ProductHandler) ListProducts() http.HandlerFunc {
 	}
 }
 
-func (s *ProductHandler) GetProduct(ctx context.Context, req *gen.GetProductRequest) (*gen.Product, error) {
-	return nil, nil
-}
+func (s *ProductHandler) GetProductsDetails() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req params.GetProductsDetail
 
-func (s *ProductHandler) GetProducts(ctx context.Context, req *gen.GetProductsRequest) (*gen.Products, error) {
-	return nil, nil
+		queries := r.URL.Query()
+		ids, ok := queries["id"]
+		if !ok {
+			err := errors.New("must provide id in get products")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		req.Ids = append(req.Ids, ids...)
+
+		var err error
+		var withStock bool
+
+		if queries.Has("with_stock") {
+			withStockParams := queries.Get("with_stock")
+			withStock, err = strconv.ParseBool(withStockParams)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
+
+		req.WithStock = withStock
+
+		products, err := s.productService.GetProductsDetails(r.Context(), req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(products)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
 }

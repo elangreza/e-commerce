@@ -26,3 +26,8 @@ type ListProductsResponse struct {
 	Total      int64      `json:"total,omitempty"`
 	TotalPages int64      `json:"total_pages,omitempty"`
 }
+
+type GetProductsDetail struct {
+	Ids       []string `json:"ids"`
+	WithStock bool     `json:"with_stock"`
+}
