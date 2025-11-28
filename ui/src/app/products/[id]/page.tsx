@@ -47,14 +47,6 @@ export default async function ProductsDetailPage({ params }: PageProps) {
           </div>
           <div>
             <h1 className="text-2xl font-bold mb-4">{product.name}</h1>
-            <ProductDescription
-              text={product.description}
-            />
-
-            <ProductTotalAndAddToCartProps
-              stock={product?.stock || 0}
-            />
-
             <p className={
               clsx(`my-2 font-bold`,
                 product?.stock && product.stock > 3 ?
@@ -67,6 +59,15 @@ export default async function ProductsDetailPage({ params }: PageProps) {
                 product.stock === 0 ?
                   "out of stock" : `only ${product?.stock} left`}
             </p>
+            <ProductDescription
+              text={product.description}
+            />
+
+            <ProductTotalAndAddToCartProps
+              stock={product?.stock || 0}
+            />
+
+
           </div>
         </div>
       </main>
