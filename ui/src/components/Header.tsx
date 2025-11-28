@@ -25,7 +25,7 @@ function Header() {
     }
 
     return (
-        <div className="flex justify-between items-center mb-10">
+        <div className="flex justify-between items-center w-full max-w-5xl m-2 p-2">
             <HeaderText name="Toko saya" />
             <form onSubmit={handleSubmit}>
                 <input

@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import { ListProductResponse } from "@/types/product";
 
@@ -43,9 +42,9 @@ export default async function Home({ searchParams }: PageProps) {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-gray-600">
-      <main className="min-h-screen w-full max-w-5xl flex-col items-center justify-between p-10 bg-white dark:bg-gray-500 sm:items-start">
-        <Header />
 
+
+      <main className="min-h-screen w-full max-w-5xl flex-col items-center justify-between p-10 bg-white dark:bg-gray-500 sm:items-start">
         {errorMsg ? (
           <div className="w-full p-6">
             <h2 className="text-xl font-semibold text-red-600">Error loading products</h2>
@@ -71,5 +70,6 @@ export default async function Home({ searchParams }: PageProps) {
         )}
       </main>
     </div>
+
   );
 }

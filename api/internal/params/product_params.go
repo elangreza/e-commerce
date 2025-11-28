@@ -18,7 +18,7 @@ type Product struct {
 	Description string `json:"description"`
 	ImageUrl    string `json:"image_url"`
 	Price       *Money `json:"price"`
-	Stock       int64  `json:"stock,omitempty"`
+	Stock       int64  `json:"stock"`
 }
 
 type ListProductsResponse struct {

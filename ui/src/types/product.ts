@@ -9,11 +9,16 @@ export interface Product {
     description: string;
     image_url: string;
     price: Money;
+    stock?: number;
 }
 
 export interface ListProductResponse {
     total_pages: number;
     page: number;
+    products: Product[];
+}
+
+export interface GetDetailsProducts {
     products: Product[];
 }
 

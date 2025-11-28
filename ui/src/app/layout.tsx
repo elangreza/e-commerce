@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -27,7 +28,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="flex justify-center items-center bg-zinc-50 dark:bg-gray-600">
+          <Header />
+        </div>
+
+        {/* <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-gray-600"> */}
+        <div >
+          {children}
+        </div>
       </body>
     </html>
   );
