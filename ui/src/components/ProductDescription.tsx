@@ -9,7 +9,6 @@ interface ProductDescriptionProps {
 
 function ProductDescription({ text }: ProductDescriptionProps) {
     const [isOpen, setIsOpen] = useState(false)
-    console.log(text.length)
     return (
         <div>
             <p className={

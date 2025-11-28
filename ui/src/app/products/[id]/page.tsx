@@ -1,4 +1,5 @@
 import ProductDescription from "@/components/ProductDescription";
+import ProductTotalAndAddToCartProps from "@/components/ProductTotalAndAddToCart";
 import { GetDetailsProducts } from "@/types/product";
 import clsx from "clsx";
 import Image from "next/image";
@@ -46,11 +47,12 @@ export default async function ProductsDetailPage({ params }: PageProps) {
           </div>
           <div>
             <h1 className="text-2xl font-bold mb-4">{product.name}</h1>
-            {/* <p className=" line-clamp-2">
-              {product.description}
-            </p> */}
             <ProductDescription
               text={product.description}
+            />
+
+            <ProductTotalAndAddToCartProps
+              stock={product?.stock || 0}
             />
 
             <p className={
