@@ -17,6 +17,7 @@ function ButtonCartAndStock({
             }
             onClick={action}
             disabled={disabled}
+            type="button"
         >
             {children}
         </button>

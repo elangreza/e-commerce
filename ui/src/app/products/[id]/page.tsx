@@ -6,7 +6,7 @@ import Image from "next/image";
 
 async function getProductsDetails(id: string): Promise<GetDetailsProducts> {
   const params = new URLSearchParams({
-    "with_stock": "1",
+    "with_stock": "true",
     id,
   });
 
@@ -62,12 +62,10 @@ export default async function ProductsDetailPage({ params }: PageProps) {
             <ProductDescription
               text={product.description}
             />
-
             <ProductTotalAndAddToCartProps
               stock={product?.stock || 0}
+              price={product?.price?.units || 0}
             />
-
-
           </div>
         </div>
       </main>
