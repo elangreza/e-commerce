@@ -64,7 +64,7 @@ export default async function ProductsDetailPage({ params }: PageProps) {
             />
             <ProductTotalAndAddToCartProps
               stock={product?.stock || 0}
-              price={product?.price?.units || 0}
+              price={product?.price}
             />
           </div>
         </div>

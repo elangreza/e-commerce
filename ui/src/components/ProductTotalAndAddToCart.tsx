@@ -1,12 +1,13 @@
 "use client";
 
+import { Money } from "@/types/product";
 import { useState } from "react";
 import ButtonCartAndStock from "./ButtonCartAndStock";
 
 
 interface ProductTotalAndAddToCartProps {
     stock: number;
-    price: number;
+    price: Money;
 }
 
 function ProductTotalAndAddToCartProps({ stock, price }: ProductTotalAndAddToCartProps) {
@@ -47,10 +48,9 @@ function ProductTotalAndAddToCartProps({ stock, price }: ProductTotalAndAddToCar
         setTotal(old => old + 1)
     }
 
-
-    var idFormatter = Intl.NumberFormat('id-ID', {
+    const idFormatter = Intl.NumberFormat('id-ID', {
         style: 'currency',
-        currency: "IDR"
+        currency: price.currency_code,
     })
 
     return (
@@ -72,7 +72,7 @@ function ProductTotalAndAddToCartProps({ stock, price }: ProductTotalAndAddToCar
                 </div>
                 <div className="my-5 flex items-center justify-between">
                     <div>subtotal: </div>
-                    <div>{idFormatter.format(total * price)}</div>
+                    <div>{idFormatter.format(total * price.units)}</div>
                 </div>
 
                 <button type="submit" className="w-full mt-2 border rounded-xl cursor-pointer border-gray-300 bg-gray-200 text-gray-700 h-10">
