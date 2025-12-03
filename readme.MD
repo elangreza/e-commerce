@@ -18,23 +18,4 @@ Built with the Saga orchestration pattern and a central orchestrator. The orches
 ## LOW PRIORITY TASKS
 
 // TODO Add basic health/metrics. Low priority. Operational awareness
-
-TODO change the structure of the project to the following:
-since the API service will call multiple other services, it makes sense to have a clear separation of concerns and organize the code accordingly.
-The proposed structure is as follows:
-see this link https://chat.qwen.ai/c/f8326237-936a-4c0b-a991-064610f0b4a6
-order-service/
-├── cmd/
-│ └── server/
-│ └── main.go
-├── internal/
-│ ├── config/
-│ ├── server/
-│ ├── service/ # Business logic
-│ │ └── order_service.go # Works directly with pb types
-│ ├── repository/ # DB logic
-│ │ └── order_repo.go
-│ └── pb/ # Generated protos
-│ └── order.pb.go
-└── proto/
-└── order.proto
+// TODO Add authentication/authorization. Low priority. Secure access in API service
