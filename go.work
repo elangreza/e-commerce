@@ -1,11 +1,11 @@
 go 1.24.3
 
 use (
+	./api
 	./gen
+	./order
+	./payment
 	./pkg
 	./product
 	./stock
-	./order
-	./payment
-	./api
 )
