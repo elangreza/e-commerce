@@ -56,10 +56,8 @@ function ProductTotalAndAddToCartProps({ stock, price }: ProductTotalAndAddToCar
     return (
         <div>
             <p className="text-center my-2">current stock: {stock}</p>
-
-            <form onSubmit={submitForm}>
+            <form onSubmit={submitForm} className="my-2">
                 <div className="flex items-center justify-center">
-
                     <ButtonCartAndStock disabled={1 === total} action={handleDecTotal} >
                         -
                     </ButtonCartAndStock>
