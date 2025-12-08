@@ -20,6 +20,7 @@ type Config struct {
 	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
 	MigrationFolder string
+	SeederFolder    string
 }
 
 // new sqlite database
@@ -57,32 +58,59 @@ func NewDbSql(options ...Option) (*sql.DB, error) {
 	}
 
 	if config.MigrationFolder != "" {
-		var driver database.Driver
-		switch config.DriverName {
-		case "sqlite3":
-			driver, err = sqlite3.WithInstance(db, &sqlite3.Config{})
-		case "postgres":
-			driver, err = postgres.WithInstance(db, &postgres.Config{})
-		}
+		isSeeder := false
+		err := config.migrator(db, config.MigrationFolder, isSeeder)
 		if err != nil {
 			return nil, err
 		}
+	}
 
-		m, err := migrate.NewWithDatabaseInstance(
-			config.MigrationFolder,
-			config.DriverName,
-			driver)
-		if err != nil && err != migrate.ErrNoChange {
-			return nil, err
-		}
-
-		err = m.Up()
-		if err != nil && err != migrate.ErrNoChange {
+	if config.SeederFolder != "" {
+		isSeeder := true
+		err := config.migrator(db, config.SeederFolder, isSeeder)
+		if err != nil {
 			return nil, err
 		}
 	}
 
 	return db, nil
+}
+
+func (c *Config) migrator(db *sql.DB, migratorFolder string, isSeeder bool) error {
+	var driver database.Driver
+	var err error
+	switch c.DriverName {
+	case "sqlite3":
+		conf := &sqlite3.Config{}
+		if isSeeder {
+			conf.MigrationsTable = "schema_seeders"
+		}
+		driver, err = sqlite3.WithInstance(db, conf)
+	case "postgres":
+		conf := &postgres.Config{}
+		if isSeeder {
+			conf.MigrationsTable = "schema_seeders"
+		}
+		driver, err = postgres.WithInstance(db, conf)
+	}
+	if err != nil {
+		return err
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		migratorFolder,
+		c.DriverName,
+		driver)
+	if err != nil && err != migrate.ErrNoChange {
+		return err
+	}
+
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		return err
+	}
+
+	return nil
 }
 
 func WithTransaction(db *sql.DB, fn func(tx *sql.Tx) error) error {
@@ -111,6 +139,13 @@ func WithDBConnectionPool(maxOpenConns, maxIdleConns int, connMaxLifetime time.D
 func WithAutoMigrate(migrationFolder string) Option {
 	return func(c *Config) error {
 		c.MigrationFolder = migrationFolder
+		return nil
+	}
+}
+
+func WithAutoSeeder(seederFolder string) Option {
+	return func(c *Config) error {
+		c.SeederFolder = seederFolder
 		return nil
 	}
 }

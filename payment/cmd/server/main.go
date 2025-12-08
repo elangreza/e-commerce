@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github/elangreza/e-commerce/pkg/dbsql"
 
 	"log"
 
 	"github.com/elangreza/e-commerce/payment/internal/server"
 	"github.com/elangreza/e-commerce/payment/internal/service"
 	"github.com/elangreza/e-commerce/payment/internal/sqlitedb"
+	"github.com/elangreza/e-commerce/pkg/dbsql"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )

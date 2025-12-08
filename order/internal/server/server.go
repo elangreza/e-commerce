@@ -31,3 +31,7 @@ func (s *Server) Start(addr string) error {
 	}
 	return s.grpcServer.Serve(lis)
 }
+
+func (s *Server) Close() {
+	s.grpcServer.GracefulStop()
+}

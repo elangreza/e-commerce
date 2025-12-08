@@ -5,8 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	globalcontanta "github/elangreza/e-commerce/pkg/globalcontanta"
-	"github/elangreza/e-commerce/pkg/money"
+	"time"
+
+	"github.com/elangreza/e-commerce/pkg/extractor"
+	globalcontanta "github.com/elangreza/e-commerce/pkg/globalcontanta"
+	"github.com/elangreza/e-commerce/pkg/money"
 
 	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/order/internal/constanta"
@@ -29,16 +32,17 @@ type (
 		CreateOrder(ctx context.Context, order entity.Order) (uuid.UUID, error)
 		GetOrderByIdempotencyKey(ctx context.Context, idempotencyKey uuid.UUID) (*entity.Order, error)
 		UpdateOrder(ctx context.Context, payloads map[string]any, orderID uuid.UUID) error
+		GetExpiryOrders(ctx context.Context, duration time.Duration) ([]entity.Order, error)
+		UpdateOrderStatusWithCallback(ctx context.Context, status constanta.OrderStatus, orderID uuid.UUID, callback func() error) error
 	}
 
-	stockServiceClient interface {
+	warehouseServiceClient interface {
 		GetStocks(ctx context.Context, productIds []string) (*gen.StockList, error)
-		ReserveStock(ctx context.Context, cartItem []entity.CartItem) (*gen.ReserveStockResponse, error)
-		ReleaseStock(ctx context.Context, reservedStockIds []int64) (*gen.ReleaseStockResponse, error)
+		ReserveStock(ctx context.Context, orderID uuid.UUID, cartItem []entity.CartItem) (*gen.ReserveStockResponse, error)
+		ReleaseStock(ctx context.Context, orderID uuid.UUID) (*gen.ReleaseStockResponse, error)
 	}
 
 	productServiceClient interface {
-		GetProduct(ctx context.Context, productId string) (*gen.Product, error)
 		GetProducts(ctx context.Context, withStock bool, productIds ...string) (*gen.Products, error)
 	}
 
@@ -48,34 +52,34 @@ type (
 )
 
 type orderService struct {
-	orderRepo            orderRepo
-	cartRepo             cartRepo
-	stockServiceClient   stockServiceClient
-	productServiceClient productServiceClient
-	paymentServiceClient paymentServiceClient
+	orderRepo              orderRepo
+	cartRepo               cartRepo
+	warehouseServiceClient warehouseServiceClient
+	productServiceClient   productServiceClient
+	paymentServiceClient   paymentServiceClient
 	gen.UnimplementedOrderServiceServer
 }
 
 func NewOrderService(
 	orderRepo orderRepo,
 	cartRepo cartRepo,
-	stockServiceClient stockServiceClient,
+	stockServiceClient warehouseServiceClient,
 	productServiceClient productServiceClient,
 	paymentServiceClient paymentServiceClient,
 ) *orderService {
 	return &orderService{
-		orderRepo:            orderRepo,
-		cartRepo:             cartRepo,
-		stockServiceClient:   stockServiceClient,
-		productServiceClient: productServiceClient,
-		paymentServiceClient: paymentServiceClient,
+		orderRepo:              orderRepo,
+		cartRepo:               cartRepo,
+		warehouseServiceClient: stockServiceClient,
+		productServiceClient:   productServiceClient,
+		paymentServiceClient:   paymentServiceClient,
 	}
 }
 
 func (s *orderService) AddProductToCart(ctx context.Context, req *gen.AddCartItemRequest) (*gen.Empty, error) {
-	userID, ok := ctx.Value(globalcontanta.UserIDKey).(uuid.UUID)
-	if !ok {
-		return nil, errors.New("unauthorized")
+	userID, err := extractor.ExtractUserIDFromMetadata(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	cart, err := s.cartRepo.GetCartByUserID(ctx, userID)
@@ -83,12 +87,19 @@ func (s *orderService) AddProductToCart(ctx context.Context, req *gen.AddCartIte
 		return nil, err
 	}
 
-	product, err := s.productServiceClient.GetProduct(ctx, req.ProductId)
+	withStock := true
+	products, err := s.productServiceClient.GetProducts(ctx, withStock, req.ProductId)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, errors.New("product not found")
+	if products == nil || products.Products == nil || len(products.Products) == 0 {
+		return nil, status.Error(codes.NotFound, "product not found")
+	}
+
+	product := products.Products[0]
+
+	if req.Quantity > product.Stock {
+		return nil, status.Errorf(codes.InvalidArgument, "quantity cannot exceed the maximum stock, current stock is %d", product.Stock)
 	}
 
 	if cart == nil {
@@ -128,13 +139,16 @@ func (s *orderService) AddProductToCart(ctx context.Context, req *gen.AddCartIte
 }
 
 func (s *orderService) GetCart(ctx context.Context, req *gen.Empty) (*gen.Cart, error) {
-	userID, ok := ctx.Value(globalcontanta.UserIDKey).(uuid.UUID)
-	if !ok {
-		return nil, errors.New("unauthorized")
+	userID, err := extractor.ExtractUserIDFromMetadata(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	cart, err := s.cartRepo.GetCartByUserID(ctx, userID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "cart not found")
+		}
 		return nil, err
 	}
 
@@ -159,7 +173,7 @@ func (s *orderService) GetCart(ctx context.Context, req *gen.Empty) (*gen.Cart, 
 		productIDs = append(productIDs, item.ProductID)
 	}
 
-	stocks, err := s.stockServiceClient.GetStocks(ctx, productIDs)
+	stocks, err := s.warehouseServiceClient.GetStocks(ctx, productIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -194,9 +208,9 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 		return ord.GetGenOrder(), nil
 	}
 
-	userID, ok := ctx.Value(globalcontanta.UserIDKey).(uuid.UUID)
-	if !ok {
-		return nil, errors.New("unauthorized")
+	userID, err := extractor.ExtractUserIDFromMetadata(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	cart, err := s.cartRepo.GetCartByUserID(ctx, userID)
@@ -204,7 +218,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 		return nil, fmt.Errorf("failed to get cart: %w", err)
 	}
 	if cart == nil || len(cart.Items) == 0 {
-		return nil, errors.New("cart is empty")
+		return nil, status.Errorf(codes.NotFound, "cart not found")
 	}
 
 	for _, item := range cart.Items {
@@ -232,7 +246,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 	for _, item := range cart.Items {
 		product, ok := productsMap[item.ProductID]
 		if !ok {
-			return nil, fmt.Errorf("failed to fetch product %s", item.ProductID)
+			return nil, status.Errorf(codes.NotFound, "product not found")
 		}
 
 		price := product.GetPrice()
@@ -244,7 +258,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 		if cartCurrency == "" {
 			cartCurrency = price.GetCurrencyCode()
 		} else if cartCurrency != price.GetCurrencyCode() {
-			return nil, errors.New("mixed currencies in cart are not supported")
+			return nil, status.Errorf(codes.InvalidArgument, "mixed currencies in cart are not supported")
 		}
 
 		totalPricePerUnit, err := money.MultiplyByInt(price, item.Quantity)
@@ -286,8 +300,11 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 		}, orderID)
 	}
 
+	ctx = context.WithValue(ctx, globalcontanta.UserIDKey, userID)
+
 	// Reserve stock
-	reserveIDs, err := s.stockServiceClient.ReserveStock(ctx, cart.Items)
+	// reserveIDs, err := s.warehouseServiceClient.ReserveStock(ctx, cart.Items)
+	_, err = s.warehouseServiceClient.ReserveStock(ctx, orderID, cart.Items)
 	if err != nil {
 		rollbackErr := rollback()
 		if rollbackErr != nil {
@@ -301,7 +318,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 	paymentTransaction, err := s.paymentServiceClient.ProcessPayment(ctx, order.TotalAmount, orderID)
 	if err != nil {
 		// Release reserved stock
-		_, releaseErr := s.stockServiceClient.ReleaseStock(ctx, reserveIDs.GetReservedStockIds())
+		_, releaseErr := s.warehouseServiceClient.ReleaseStock(ctx, orderID)
 		if releaseErr != nil {
 			// Log - stock might be stuck in reserved state
 			fmt.Printf("Error releasing stock during payment failure: %v", releaseErr)
@@ -325,9 +342,50 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 		fmt.Printf("Payment succeeded but status update failed: %v", err)
 		// Consider whether to return an error or continue with partial success
 		// For now, we'll return the error to indicate the operation didn't complete successfully
-		return nil, fmt.Errorf("payment succeeded but failed to update order with transaction ID: %w", err)
+		return nil, fmt.Errorf("failed to update order with transaction ID: %w", err)
 	}
 
 	order.ID = orderID
-	return ord.GetGenOrder(), nil
+	order.Status = constanta.OrderStatusStockReserved
+
+	return order.GetGenOrder(), nil
+}
+
+func (s *orderService) RemoveExpiryOrder(ctx context.Context, duration time.Duration) (int, error) {
+	orders, err := s.orderRepo.GetExpiryOrders(ctx, duration)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, order := range orders {
+
+		if order.Status == constanta.OrderStatusPending {
+			err = s.orderRepo.UpdateOrder(ctx, map[string]any{
+				"status": constanta.OrderStatusFailed,
+			}, order.ID)
+			if err != nil {
+				fmt.Println("err when Update status", err)
+			}
+		}
+
+		if order.Status == constanta.OrderStatusStockReserved {
+			var releaseStock = func() error {
+				ctx = context.WithValue(context.Background(), globalcontanta.UserIDKey, order.UserID)
+				_, err := s.warehouseServiceClient.ReleaseStock(ctx, order.ID)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			}
+
+			err := s.orderRepo.UpdateOrderStatusWithCallback(ctx, constanta.OrderStatusFailed, order.ID, releaseStock)
+			if err != nil {
+				fmt.Println("err when Release Stock", err)
+			}
+
+		}
+	}
+
+	return len(orders), nil
 }

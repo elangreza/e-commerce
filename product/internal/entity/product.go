@@ -13,6 +13,7 @@ type Product struct {
 	ImageUrl    string     `json:"image_url"`
 	CreatedAt   string     `json:"created_at"`
 	UpdatedAt   string     `json:"updated_at"`
+	ShopID      int64      `json:"shop_id"`
 }
 
 type ListProductRequest struct {

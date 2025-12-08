@@ -7,5 +7,6 @@ use (
 	./payment
 	./pkg
 	./product
-	./stock
+	./warehouse
+	./shop
 )

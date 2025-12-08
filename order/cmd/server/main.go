@@ -1,8 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"github/elangreza/e-commerce/pkg/dbsql"
+	"context"
+	"time"
+
+	"github.com/elangreza/e-commerce/pkg/dbsql"
+	"github.com/elangreza/e-commerce/pkg/gracefulshutdown"
 
 	"log"
 
@@ -10,6 +13,7 @@ import (
 	"github.com/elangreza/e-commerce/order/internal/server"
 	"github.com/elangreza/e-commerce/order/internal/service"
 	"github.com/elangreza/e-commerce/order/internal/sqlitedb"
+	"github.com/elangreza/e-commerce/order/internal/task"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -29,7 +33,7 @@ func main() {
 
 	cartRepo := sqlitedb.NewCartRepository(db)
 	orderRepo := sqlitedb.NewOrderRepository(db)
-	stockClient, err := client.NewStockClient()
+	stockClient, err := client.NewWarehouseClient()
 	errChecker(err)
 	productClient, err := client.NewProductClient()
 	errChecker(err)
@@ -44,16 +48,40 @@ func main() {
 		paymentClient)
 
 	srv := server.New(orderService)
-	address := fmt.Sprintf(":%v", 50054)
-	if err := srv.Start(address); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-		return
-	}
-	// grpcServer := grpc.NewServer(
-	// 	grpc.ChainUnaryInterceptor(
-	// 		interceptor.UserIDParser(),
-	// 	),
-	// )
+	address := "localhost:50051"
+	go func() {
+		if err := srv.Start(address); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+			return
+		}
+	}()
+
+	taskOrder := task.NewTaskOrder(orderService)
+	taskOrder.SetRemoveExpiryDuration(3 * time.Minute)
+
+	gs := gracefulshutdown.New(context.Background(), 5*time.Second,
+		gracefulshutdown.Operation{
+			Name: "grpc",
+			ShutdownFunc: func(ctx context.Context) error {
+				srv.Close()
+				return nil
+			},
+		},
+		gracefulshutdown.Operation{
+			Name: "task order",
+			ShutdownFunc: func(ctx context.Context) error {
+				taskOrder.Close()
+				return nil
+			},
+		},
+		gracefulshutdown.Operation{
+			Name: "sqlite",
+			ShutdownFunc: func(ctx context.Context) error {
+				return db.Close()
+			},
+		},
+	)
+	<-gs
 }
 
 func errChecker(err error) {

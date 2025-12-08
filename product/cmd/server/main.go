@@ -1,9 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"github/elangreza/e-commerce/pkg/dbsql"
+	"context"
 	"log"
+	"time"
+
+	"github.com/elangreza/e-commerce/pkg/dbsql"
+	"github.com/elangreza/e-commerce/pkg/gracefulshutdown"
 
 	"github.com/elangreza/e-commerce/product/internal/client"
 	"github.com/elangreza/e-commerce/product/internal/server"
@@ -22,23 +25,42 @@ func main() {
 		dbsql.WithSqliteDB("product.db"),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
+		dbsql.WithAutoSeeder("file://./migrations/seed"),
 	)
 	errChecker(err)
 	defer db.Close()
 
-	// productRepo, err := mockjson.LoadProductJson()
 	productRepo := sqlitedb.NewProductRepository(db)
-	stockClient, err := client.NewStockClient()
+	warehouseClient, err := client.NewWarehouseClient()
 	errChecker(err)
 
-	address := fmt.Sprintf("localhost:%v", 50050)
+	address := "localhost:50052"
 
-	productService := service.NewProductService(productRepo, stockClient)
+	productService := service.NewProductService(productRepo, warehouseClient)
 	srv := server.New(productService)
-	if err := srv.Start(address); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-		return
-	}
+	go func() {
+		if err := srv.Start(address); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+			return
+		}
+	}()
+
+	gs := gracefulshutdown.New(context.Background(), 5*time.Second,
+		gracefulshutdown.Operation{
+			Name: "grpc",
+			ShutdownFunc: func(ctx context.Context) error {
+				srv.Close()
+				return nil
+			},
+		},
+		gracefulshutdown.Operation{
+			Name: "sqlite",
+			ShutdownFunc: func(ctx context.Context) error {
+				return db.Close()
+			},
+		},
+	)
+	<-gs
 }
 
 func errChecker(err error) {

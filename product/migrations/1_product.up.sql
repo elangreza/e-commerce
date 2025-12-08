@@ -6,8 +6,12 @@
 --         "image_url": "http://example.com/smartphone.png"
 -- }
 
+-- shop_id is used for grouping
+-- can easily grow if multiple shop_id in one commerce
+
 CREATE TABLE products (
     id TEXT PRIMARY KEY,
+    shop_id INTEGER NOT NULL, 
     name TEXT NOT NULL,
     description TEXT,
     price INTEGER NOT NULL CHECK (price >= 0),

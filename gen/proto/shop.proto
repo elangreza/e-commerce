@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package gen;
+
+import "warehouse.proto";
+
+option go_package = "github.com/elangreza/e-commerce/proto/gen";
+
+message GetShopsRequest {
+    repeated int64 ids = 1;
+    // only used for logic, don't show in list product
+    bool withWarehouses = 2;
+}
+
+message Shop {
+    int64 id = 1;
+    string name = 2;
+    repeated Warehouse warehouses = 3;
+}
+
+message ShopList {
+    repeated Shop shops = 1;
+}
+
+service ShopService {
+    rpc GetShops(GetShopsRequest) returns (ShopList) {}
+}

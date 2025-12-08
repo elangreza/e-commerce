@@ -3,9 +3,9 @@ package sqlitedb
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"github/elangreza/e-commerce/pkg/money"
 	"strings"
+
+	"github.com/elangreza/e-commerce/pkg/money"
 
 	"github.com/elangreza/e-commerce/product/internal/entity"
 	"github.com/google/uuid"
@@ -35,7 +35,8 @@ func (pm *ProductRepository) ListProducts(ctx context.Context, req entity.ListPr
 		currency,
 		image_url,
 		created_at,
-		updated_at
+		updated_at,
+		shop_id
 	from products
 	where
 		(name LIKE '%' || ? || '%' OR ? IS NULL) ` + orderClause + ` LIMIT ? OFFSET ?`
@@ -52,7 +53,14 @@ func (pm *ProductRepository) ListProducts(ctx context.Context, req entity.ListPr
 		var p entity.Product
 		var priceAmount int64
 		var priceCurrency string
-		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &priceAmount, &priceCurrency, &p.ImageUrl, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		if err := rows.Scan(
+			&p.ID,
+			&p.Name,
+			&p.Description, &priceAmount, &priceCurrency,
+			&p.ImageUrl,
+			&p.CreatedAt,
+			&p.UpdatedAt,
+			&p.ShopID); err != nil {
 			return nil, err
 		}
 
@@ -85,7 +93,8 @@ func (pm *ProductRepository) GetProductByIDs(ctx context.Context, productID ...u
 		currency,
 		image_url,
 		created_at,
-		updated_at
+		updated_at,
+		shop_id
 	from products
 	where id = ?`
 	args := []any{}
@@ -95,7 +104,6 @@ func (pm *ProductRepository) GetProductByIDs(ctx context.Context, productID ...u
 		args = append(args, v)
 	}
 
-	fmt.Println(args)
 	if len(productID) > 1 {
 		q = `select
 		id,
@@ -105,7 +113,8 @@ func (pm *ProductRepository) GetProductByIDs(ctx context.Context, productID ...u
 		currency,
 		image_url,
 		created_at,
-		updated_at
+		updated_at,
+		shop_id
 	from products
 	where id IN (` + qMarks + `)`
 	}
@@ -128,7 +137,8 @@ func (pm *ProductRepository) GetProductByIDs(ctx context.Context, productID ...u
 			&priceCurrency,
 			&p.ImageUrl,
 			&p.CreatedAt,
-			&p.UpdatedAt)
+			&p.UpdatedAt,
+			&p.ShopID)
 		if err != nil {
 			return nil, err
 		}

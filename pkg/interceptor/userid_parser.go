@@ -2,7 +2,8 @@ package interceptor
 
 import (
 	"context"
-	"github/elangreza/e-commerce/pkg/globalcontanta"
+
+	"github.com/elangreza/e-commerce/pkg/globalcontanta"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"

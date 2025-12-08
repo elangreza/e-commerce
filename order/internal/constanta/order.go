@@ -11,9 +11,9 @@ type OrderStatus string
 const (
 	OrderStatusPending       OrderStatus = "PENDING"
 	OrderStatusStockReserved OrderStatus = "STOCK_RESERVED"
-	OrderStatusCompleted     OrderStatus = "COMPLETED"
-	OrderStatusCancelled     OrderStatus = "CANCELLED"
-	OrderStatusFailed        OrderStatus = "FAILED"
+	OrderStatusCompleted     OrderStatus = "COMPLETED" // when customer pays the bills
+	OrderStatusCancelled     OrderStatus = "CANCELLED" // when the warehouse is inactive, cancelled all order
+	OrderStatusFailed        OrderStatus = "FAILED"    // when customer exceeded the expiry order
 )
 
 // return string

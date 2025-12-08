@@ -3,8 +3,9 @@ package sqlitedb
 import (
 	"context"
 	"database/sql"
-	"github/elangreza/e-commerce/pkg/dbsql"
-	"github/elangreza/e-commerce/pkg/money"
+
+	"github.com/elangreza/e-commerce/pkg/dbsql"
+	"github.com/elangreza/e-commerce/pkg/money"
 
 	"github.com/elangreza/e-commerce/order/internal/entity"
 	"github.com/google/uuid"
@@ -25,7 +26,7 @@ func (r *CartRepository) GetCartByUserID(ctx context.Context, userID uuid.UUID) 
 
 	q := `
 	SELECT id, user_id
-	FROM carts WHERE user_id = ?;`
+	FROM carts WHERE user_id = ? AND is_active IS TRUE;`
 
 	var cart entity.Cart
 	err := r.db.QueryRowContext(ctx, q, userID).Scan(
@@ -86,10 +87,11 @@ func (r *CartRepository) CreateCart(ctx context.Context, cart entity.Cart) error
 	}
 
 	err = dbsql.WithTransaction(r.db, func(tx *sql.Tx) error {
-		q := `INSERT INTO carts (id, user_id) VALUES (?, ?);`
+		q := `INSERT INTO carts (id, user_id, is_active) VALUES (?, ?, ?);`
 		_, err := tx.ExecContext(ctx, q,
 			cartID,
 			cart.UserID,
+			true,
 		)
 		if err != nil {
 			return err
@@ -135,7 +137,7 @@ func (r *CartRepository) UpdateCartItem(ctx context.Context, item entity.CartIte
 	q := `UPDATE cart_items
 		SET quantity = ?, name = ?, price = ?
 		WHERE cart_id = ? AND product_id = ?;`
-	_, err := r.db.ExecContext(ctx, q, item.Quantity, item.Name, item.Price, item.CartID, item.ProductID)
+	_, err := r.db.ExecContext(ctx, q, item.Quantity, item.Name, item.Price.Units, item.CartID, item.ProductID)
 	if err != nil {
 		return err
 	}

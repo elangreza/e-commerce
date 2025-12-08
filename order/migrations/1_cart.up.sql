@@ -1,6 +1,7 @@
 CREATE TABLE carts (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
+    is_active BOOLEAN,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

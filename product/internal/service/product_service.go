@@ -10,7 +10,6 @@ import (
 
 	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/product/internal/entity"
-	"github.com/elangreza/e-commerce/product/internal/mockjson"
 	params "github.com/elangreza/e-commerce/product/internal/params"
 	"github.com/elangreza/e-commerce/product/pkg/errs"
 	"github.com/google/uuid"
@@ -25,21 +24,21 @@ type (
 		GetProductByIDs(ctx context.Context, ID ...uuid.UUID) ([]entity.Product, error)
 	}
 
-	stockServiceClient interface {
+	warehouseServiceClient interface {
 		GetStocks(ctx context.Context, productIds []string) (*gen.StockList, error)
 	}
 )
 
-func NewProductService(productRepo productRepo, stockServiceClient stockServiceClient) *productService {
+func NewProductService(productRepo productRepo, warehouseServiceClient warehouseServiceClient) *productService {
 	return &productService{
-		productRepo:        productRepo,
-		stockServiceClient: stockServiceClient,
+		productRepo:            productRepo,
+		warehouseServiceClient: warehouseServiceClient,
 	}
 }
 
 type productService struct {
-	productRepo        productRepo
-	stockServiceClient stockServiceClient
+	productRepo            productRepo
+	warehouseServiceClient warehouseServiceClient
 	gen.UnimplementedProductServiceServer
 }
 
@@ -76,12 +75,22 @@ func (p *productService) ListProducts(ctx context.Context, req *gen.ListProducts
 
 	productResponses := make([]*gen.Product, len(products))
 	for i, product := range products {
+		stocks, err := p.warehouseServiceClient.GetStocks(ctx, []string{product.ID.String()})
+		if err != nil {
+			return nil, err
+		}
+		var stock int64 = 0
+		for _, v := range stocks.Stocks {
+			stock += v.Quantity
+		}
 		productResponses[i] = &gen.Product{
 			Id:          product.ID.String(),
 			Name:        product.Name,
 			Description: product.Description,
 			Price:       product.Price,
 			ImageUrl:    product.ImageUrl,
+			Stock:       stock,
+			ShopId:      product.ShopID,
 		}
 	}
 
@@ -89,44 +98,6 @@ func (p *productService) ListProducts(ctx context.Context, req *gen.ListProducts
 		Products:   productResponses,
 		Total:      total,
 		TotalPages: paginationParams.GetTotalPages(total),
-	}, nil
-}
-
-func (p *productService) GetProduct(ctx context.Context, req *gen.GetProductRequest) (*gen.Product, error) {
-	productID, err := uuid.Parse(req.Id)
-	if err != nil {
-		return nil, err
-	}
-
-	products, err := p.productRepo.GetProductByIDs(ctx, productID)
-	if err != nil {
-		// if errors.Is(err, sql.ErrNoRows) || errors.Is(err, mockjson.DataNotFound) {
-		// 	return nil, errs.NotFound{Message: "product not found"}
-		// }
-		return nil, err
-	}
-
-	if len(products) == 0 {
-		return nil, errs.NotFound{Message: "product not found"}
-	}
-
-	stocks, err := p.stockServiceClient.GetStocks(ctx, []string{products[0].ID.String()})
-	if err != nil {
-		return nil, err
-	}
-
-	var stock int64 = 0
-	for _, v := range stocks.Stocks {
-		stock += v.Quantity
-	}
-
-	return &gen.Product{
-		Id:          products[0].ID.String(), // Convert UUID to string
-		Name:        products[0].Name,
-		Description: products[0].Description,
-		Price:       products[0].Price,
-		ImageUrl:    products[0].ImageUrl,
-		Stock:       stock,
 	}, nil
 }
 
@@ -143,7 +114,7 @@ func (p *productService) GetProducts(ctx context.Context, req *gen.GetProductsRe
 
 	products, err := p.productRepo.GetProductByIDs(ctx, productIDs...)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, mockjson.DataNotFound) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.NotFound{Message: "product not found"}
 		}
 		return nil, err
@@ -153,7 +124,7 @@ func (p *productService) GetProducts(ctx context.Context, req *gen.GetProductsRe
 	for _, product := range products {
 		var stock int64 = 0
 		if req.WithStock {
-			stocks, err := p.stockServiceClient.GetStocks(ctx, []string{product.ID.String()})
+			stocks, err := p.warehouseServiceClient.GetStocks(ctx, []string{product.ID.String()})
 			if err != nil {
 				return nil, err
 			}
