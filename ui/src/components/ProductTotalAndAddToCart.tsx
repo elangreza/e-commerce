@@ -1,5 +1,6 @@
 "use client";
 
+import { CartItem, useCartStore } from "@/store/cart";
 import { Money } from "@/types/product";
 import { useState } from "react";
 import ButtonCartAndStock from "./ButtonCartAndStock";
@@ -8,18 +9,28 @@ import ButtonCartAndStock from "./ButtonCartAndStock";
 interface ProductTotalAndAddToCartProps {
     stock: number;
     price: Money;
+    productID: string;
 }
 
-function ProductTotalAndAddToCartProps({ stock, price }: ProductTotalAndAddToCartProps) {
+function ProductTotalAndAddToCartProps({ stock, price, productID }: ProductTotalAndAddToCartProps) {
+
+    const addCartItem = useCartStore((state) => state.addCartItem)
+    const currentQuantityInCart = useCartStore((state) => state.Items.find((item) => item.ProductID == productID)?.Quantity || 1)
+    const [total, setTotal] = useState(currentQuantityInCart);
+
     function submitForm(e: React.FormEvent) {
         e.preventDefault()
 
-        console.log("add to cart")
+        var a: CartItem = {
+            ProductID: productID,
+            Quantity: total,
+        }
+
+        addCartItem(a)
 
         // TODO add product into cart
     }
 
-    const [total, setTotal] = useState(1);
 
     function handleTotal(e: React.ChangeEvent<HTMLInputElement>) {
         var val = Number(e.target.value) || 1;

@@ -9,7 +9,6 @@ interface ButtonCartAndStockProps {
 function ButtonCartAndStock({
     action, children, disabled = false
 }: ButtonCartAndStockProps) {
-    console.log(disabled)
     return (
         <button
             className={
