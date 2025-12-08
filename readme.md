@@ -2,7 +2,7 @@
 
 this is a simple e-commerce application that allows users to place orders for products. The application is built with scalability and reliability in mind, utilizing best practices for handling orders and payments.
 
-Built with the Saga orchestration pattern and a central orchestrator. The orchestrator runs each step needed to complete an order, makes sure steps happen in the right order, and handles failures cleanly. This project does not use a choreography (event-driven / decentralized) approach.
+Built with the **Saga orchestration pattern and a central orchestrator**. The orchestrator runs each step needed to complete an order, makes sure steps happen in the right order, and handles failures cleanly. This project does not use a **choreography (event-driven / decentralized)** approach.
 
 # TASKS
 
