@@ -19,6 +19,7 @@ Built with the Saga orchestration pattern and a central orchestrator. The orches
 - TODO Add CI/CD pipeline. High priority. Automate testing & deployment
 - TODO add better error handling. High priority. Improve reliability
 - TODO add logging. High priority. Easier debugging, observability
+- TODO add user role, can get from content-management system repo (CMS) later and restrict the warehouse management endpoints to admin users only
 
 ## MEDIUM PRIORITY TASKS
 
