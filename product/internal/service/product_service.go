@@ -51,7 +51,6 @@ func (p *productService) ListProducts(ctx context.Context, req *gen.ListProducts
 	}
 
 	paginationParams.SetValidSortKey("updated_at", "name", "price")
-
 	if err := paginationParams.Validate(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

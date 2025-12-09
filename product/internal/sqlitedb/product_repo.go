@@ -22,27 +22,31 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 }
 
 func (pm *ProductRepository) ListProducts(ctx context.Context, req entity.ListProductRequest) ([]entity.Product, error) {
-	orderClause := ""
-	if req.OrderClause != "" {
-		orderClause = " order by " + req.OrderClause
+	// Start building WHERE conditions and args
+	whereClauses := []string{"1=1"} // dummy condition to simplify logic
+	args := []any{}
+
+	// Name filter
+	if req.Search != "" {
+		whereClauses = append(whereClauses, "(name LIKE '%' || ? || '%')")
+		args = append(args, req.Search)
 	}
 
-	q := `select
-		id,
-		name,
-		description,
-		price,
-		currency,
-		image_url,
-		created_at,
-		updated_at,
-		shop_id
-	from products
-	where
-		(name LIKE '%' || ? || '%' OR ? IS NULL) ` + orderClause + ` LIMIT ? OFFSET ?`
-	offset := (req.Page - 1) * req.Limit
+	// Build ORDER clause
+	orderClause := ""
+	if req.OrderClause != "" {
+		orderClause = " ORDER BY " + req.OrderClause
+	}
 
-	rows, err := pm.db.QueryContext(ctx, q, req.Search, req.Search, req.Limit, offset)
+	// Build final query
+	query := `SELECT id, name, description, price, currency, image_url, created_at, updated_at, shop_id
+              FROM products
+              WHERE ` + strings.Join(whereClauses, " AND ") + orderClause + ` LIMIT ? OFFSET ?`
+
+	offset := (req.Page - 1) * req.Limit
+	args = append(args, req.Limit, offset)
+
+	rows, err := pm.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,11 +60,14 @@ func (pm *ProductRepository) ListProducts(ctx context.Context, req entity.ListPr
 		if err := rows.Scan(
 			&p.ID,
 			&p.Name,
-			&p.Description, &priceAmount, &priceCurrency,
+			&p.Description,
+			&priceAmount,
+			&priceCurrency,
 			&p.ImageUrl,
 			&p.CreatedAt,
 			&p.UpdatedAt,
-			&p.ShopID); err != nil {
+			&p.ShopID,
+		); err != nil {
 			return nil, err
 		}
 
@@ -74,11 +81,18 @@ func (pm *ProductRepository) ListProducts(ctx context.Context, req entity.ListPr
 }
 
 func (pm *ProductRepository) TotalProducts(ctx context.Context, req entity.ListProductRequest) (int64, error) {
-	q := `select count(*) from products
-	where
-		(name LIKE '%' || ? || '%' OR ? IS NULL)`
+	whereClauses := []string{"1=1"}
+	args := []any{}
+
+	if req.Search != "" {
+		whereClauses = append(whereClauses, "(name LIKE '%' || ? || '%')")
+		args = append(args, req.Search)
+	}
+
+	query := `SELECT COUNT(1) FROM products WHERE ` + strings.Join(whereClauses, " AND ")
+
 	var total int64
-	if err := pm.db.QueryRowContext(ctx, q, req.Search, req.Search).Scan(&total); err != nil {
+	if err := pm.db.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
 		return 0, err
 	}
 	return total, nil

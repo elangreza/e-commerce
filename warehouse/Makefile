@@ -5,8 +5,5 @@ run:
 gen:
 	go generate ./...
 
-seed:
-	sqlite3 warehouse.db < migrations/seed/seed.sql
-
-.PHONY: run gen seed
+.PHONY: run gen
 .DEFAULT_GOAL := run

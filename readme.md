@@ -8,7 +8,6 @@ Built with the **Saga orchestration pattern and a central orchestrator**. The or
 
 ## HIGH PRIORITY TASKS
 
-- TODO update seeder file in each main.go files
 - TODO API get product details
 - TODO API view product when shop is active/inactive
 - TODO Add unit tests. High priority. Confidence to ship faster
@@ -50,7 +49,8 @@ here's the list of technologies used in this project:
 - API gateway: go-chi router
 - Authentication: JWT tokens
 - Communication between services: gRPC with go
-- Database: can be run with either PostgreSQL or Sqlite3
+- Communication between client: Backend for Frontend (BFF) pattern with REST API
+- Database: can be run with either Sqlite3 or PostgreSQL
 
 here's the list of API endpoints exposed by the API service:
 
@@ -229,3 +229,9 @@ here's the list of API endpoints exposed by the API service:
       "quantity": 10
   }'
   ```
+
+<details>
+<summary><b><i>Click me for important info!</i></b></summary>
+More details here.
+
+</details>

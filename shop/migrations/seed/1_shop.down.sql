@@ -1,0 +1,1 @@
+DELETE FROM shops WHERE id IN (1,2);

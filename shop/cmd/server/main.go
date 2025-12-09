@@ -22,6 +22,7 @@ func main() {
 		dbsql.WithSqliteDB("shop.db"),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
+		dbsql.WithAutoSeeder("file://./migrations/seed"),
 	)
 	errChecker(err)
 	defer db.Close()
