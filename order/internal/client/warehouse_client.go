@@ -20,8 +20,8 @@ type (
 	}
 )
 
-func NewWarehouseClient() (*warehouseServiceClient, error) {
-	grpcClient, err := grpc.NewClient("warehouse:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewWarehouseClient(addr string) (*warehouseServiceClient, error) {
+	grpcClient, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}

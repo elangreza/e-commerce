@@ -139,6 +139,7 @@ func (p *productService) GetProducts(ctx context.Context, req *gen.GetProductsRe
 			Price:       product.Price,
 			ImageUrl:    product.ImageUrl,
 			Stock:       stock,
+			ShopId:      product.ShopID,
 		})
 	}
 

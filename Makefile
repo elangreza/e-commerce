@@ -14,6 +14,12 @@ build-runtime:
 	docker build -t e-commerce/runtime-base:latest -f images/runtime-base/Dockerfile .
 
 build: build-builder build-runtime
+	mkdir -p envs
+	cp ./api/env.example envs/api.env
+	cp ./order/env.example envs/order.env
+	cp ./product/env.example envs/product.env
+	cp ./warehouse/env.example envs/warehouse.env
+	cp ./shop/env.example envs/shop.env
 	docker compose up --build 
 
 .PHONY: gen build

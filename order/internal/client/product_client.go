@@ -14,8 +14,8 @@ type (
 	}
 )
 
-func NewProductClient() (*productServiceClient, error) {
-	grpcClient, err := grpc.NewClient("product:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewProductClient(addr string) (*productServiceClient, error) {
+	grpcClient, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}

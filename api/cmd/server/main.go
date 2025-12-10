@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/elangreza/e-commerce/pkg/config"
 	"github.com/elangreza/e-commerce/pkg/dbsql"
 	"github.com/elangreza/e-commerce/pkg/gracefulshutdown"
 
@@ -21,7 +23,20 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+type Config struct {
+	ServicePort          string `koanf:"SERVICE_PORT"`
+	TokenSecret          string `koanf:"TOKEN_SECRET"`
+	OrderServiceAddr     string `koanf:"ORDER_SERVICE_ADDR"`
+	ProductServiceAddr   string `koanf:"PRODUCT_SERVICE_ADDR"`
+	WarehouseServiceAddr string `koanf:"WAREHOUSE_SERVICE_ADDR"`
+	ShopServiceAddr      string `koanf:"SHOP_SERVICE_ADDR"`
+}
+
 func main() {
+	var cfg Config
+	err := config.LoadConfig(&cfg)
+	errChecker(err)
+
 	handler := chi.NewRouter()
 	handler.Use(middleware.Recoverer)
 	handler.Use(middleware.Logger)
@@ -47,25 +62,24 @@ func main() {
 	userRepo := sqlitedb.NewUserRepo(db)
 	tokenRepo := sqlitedb.NewTokenRepo(db)
 
-	// service
-	authService := service.NewAuthService(userRepo, tokenRepo)
-
 	// order
-	grpcClientOrder, err := grpc.NewClient("order:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcClientOrder, err := grpc.NewClient(cfg.OrderServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 
 	// product
-	grpcClientProduct, err := grpc.NewClient("product:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcClientProduct, err := grpc.NewClient(cfg.ProductServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 
 	// warehouse
-	grpcClientWarehouse, err := grpc.NewClient("warehouse:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcClientWarehouse, err := grpc.NewClient(cfg.WarehouseServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 
 	// shop
-	grpcClientShop, err := grpc.NewClient("shop:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcClientShop, err := grpc.NewClient(cfg.ShopServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 
+	// services
+	authService := service.NewAuthService(userRepo, tokenRepo, cfg.TokenSecret)
 	productService := service.NewProductService(gen.NewProductServiceClient(grpcClientProduct), gen.NewShopServiceClient(grpcClientShop))
 	orderService := service.NewOrderService(gen.NewOrderServiceClient(grpcClientOrder))
 	warehouseService := service.NewWarehouseService(gen.NewWarehouseServiceClient(grpcClientWarehouse))
@@ -75,8 +89,10 @@ func main() {
 	rest.NewOrderHandler(handler, authService, orderService)
 	rest.NewWarehouseHandler(handler, authService, warehouseService)
 
+	addr := fmt.Sprintf(":%s", cfg.ServicePort)
+
 	srv := &http.Server{
-		Addr:           ":8080",
+		Addr:           addr,
 		Handler:        handler,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
@@ -88,6 +104,8 @@ func main() {
 			log.Fatalf("HTTP server ListenAndServe: %v", err)
 		}
 	}()
+
+	fmt.Printf("API-service running at %s\n", addr)
 
 	gs := gracefulshutdown.New(context.Background(), 5*time.Second,
 		gracefulshutdown.Operation{

@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/elangreza/e-commerce/pkg/config"
 	"github.com/elangreza/e-commerce/pkg/dbsql"
 	"github.com/elangreza/e-commerce/pkg/gracefulshutdown"
 
@@ -18,7 +20,17 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
+type Config struct {
+	ServicePort          string `koanf:"SERVICE_PORT"`
+	ProductServiceAddr   string `koanf:"PRODUCT_SERVICE_ADDR"`
+	WarehouseServiceAddr string `koanf:"WAREHOUSE_SERVICE_ADDR"`
+	ShopServiceAddr      string `koanf:"SHOP_SERVICE_ADDR"`
+}
+
 func main() {
+	var cfg Config
+	err := config.LoadConfig(&cfg)
+	errChecker(err)
 
 	// implement this later
 	// github.com/samber/slog-zap
@@ -33,28 +45,31 @@ func main() {
 
 	cartRepo := sqlitedb.NewCartRepository(db)
 	orderRepo := sqlitedb.NewOrderRepository(db)
-	stockClient, err := client.NewWarehouseClient()
+	warehouseClient, err := client.NewWarehouseClient(cfg.WarehouseServiceAddr)
 	errChecker(err)
-	productClient, err := client.NewProductClient()
+	productClient, err := client.NewProductClient(cfg.ProductServiceAddr)
 	errChecker(err)
+	// TODO payment service later
 	paymentClient, err := client.NewPaymentClient()
 	errChecker(err)
 
 	orderService := service.NewOrderService(
 		orderRepo,
 		cartRepo,
-		stockClient,
+		warehouseClient,
 		productClient,
 		paymentClient)
 
 	srv := server.New(orderService)
-	address := ":50051"
+	addr := fmt.Sprintf(":%s", cfg.ServicePort)
 	go func() {
-		if err := srv.Start(address); err != nil {
+		if err := srv.Start(addr); err != nil {
 			log.Fatalf("failed to serve: %v", err)
 			return
 		}
 	}()
+
+	fmt.Printf("ORDER-service running at %s\n", addr)
 
 	taskOrder := task.NewTaskOrder(orderService)
 	taskOrder.SetRemoveExpiryDuration(3 * time.Minute)

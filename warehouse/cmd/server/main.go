@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -9,13 +10,21 @@ import (
 	"github.com/elangreza/e-commerce/warehouse/internal/service"
 	"github.com/elangreza/e-commerce/warehouse/internal/sqlitedb"
 
+	"github.com/elangreza/e-commerce/pkg/config"
 	"github.com/elangreza/e-commerce/pkg/dbsql"
 	"github.com/elangreza/e-commerce/pkg/gracefulshutdown"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
+type Config struct {
+	ServicePort string `koanf:"SERVICE_PORT"`
+}
+
 func main() {
+	var cfg Config
+	err := config.LoadConfig(&cfg)
+	errChecker(err)
 
 	db, err := dbsql.NewDbSql(
 		dbsql.WithSqliteDB("warehouse.db"),
@@ -29,15 +38,17 @@ func main() {
 	warehouseRepo := sqlitedb.NewWarehouseRepo(db)
 	warehouseService := service.NewWarehouseService(warehouseRepo)
 
-	address := ":50053"
+	addr := fmt.Sprintf(":%s", cfg.ServicePort)
 
 	srv := server.New(warehouseService)
 	go func() {
-		if err := srv.Start(address); err != nil {
+		if err := srv.Start(addr); err != nil {
 			log.Fatalf("failed to serve: %v", err)
 			return
 		}
 	}()
+
+	fmt.Printf("WAREHOUSE-service running at %s\n", addr)
 
 	gs := gracefulshutdown.New(context.Background(), 5*time.Second,
 		gracefulshutdown.Operation{

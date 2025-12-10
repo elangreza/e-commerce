@@ -108,11 +108,12 @@ func (s *productService) GetProductsDetails(ctx context.Context, req params.GetP
 				Units:        product.Price.GetUnits(),
 				CurrencyCode: product.Price.GetCurrencyCode(),
 			},
+			ShopID: product.ShopId,
 		}
 		if req.WithStock {
 			p.Stock = product.GetStock()
 		}
-		res.Products = append(res.Products, p)
+
 		shopName, ok := shopMap[product.GetShopId()]
 		if ok {
 			p.ShopName = shopName

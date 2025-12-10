@@ -42,6 +42,7 @@ func (r *WarehouseRepo) GetStocks(ctx context.Context, productIDs []string) ([]*
 	for i, id := range productIDs {
 		args[i] = id
 	}
+
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err

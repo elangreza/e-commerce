@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
+	"github.com/elangreza/e-commerce/pkg/config"
 	"github.com/elangreza/e-commerce/pkg/dbsql"
 	"github.com/elangreza/e-commerce/pkg/gracefulshutdown"
 
@@ -16,7 +18,15 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
+type Config struct {
+	ServicePort          string `koanf:"SERVICE_PORT"`
+	WarehouseServiceAddr string `koanf:"WAREHOUSE_SERVICE_ADDR"`
+}
+
 func main() {
+	var cfg Config
+	err := config.LoadConfig(&cfg)
+	errChecker(err)
 
 	// implement this later
 	// github.com/samber/slog-zap
@@ -31,19 +41,21 @@ func main() {
 	defer db.Close()
 
 	productRepo := sqlitedb.NewProductRepository(db)
-	warehouseClient, err := client.NewWarehouseClient()
+	warehouseClient, err := client.NewWarehouseClient(cfg.WarehouseServiceAddr)
 	errChecker(err)
 
-	address := ":50052"
+	addr := fmt.Sprintf(":%s", cfg.ServicePort)
 
 	productService := service.NewProductService(productRepo, warehouseClient)
 	srv := server.New(productService)
 	go func() {
-		if err := srv.Start(address); err != nil {
+		if err := srv.Start(addr); err != nil {
 			log.Fatalf("failed to serve: %v", err)
 			return
 		}
 	}()
+
+	fmt.Printf("PRODUCT-service running at %s\n", addr)
 
 	gs := gracefulshutdown.New(context.Background(), 5*time.Second,
 		gracefulshutdown.Operation{

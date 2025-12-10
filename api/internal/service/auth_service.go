@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/elangreza/e-commerce/api/internal/constanta"
 	"github.com/elangreza/e-commerce/api/internal/entity"
 	errs "github.com/elangreza/e-commerce/api/internal/error"
 	"github.com/elangreza/e-commerce/api/internal/params"
@@ -27,15 +26,17 @@ type (
 	}
 
 	AuthService struct {
-		UserRepo  userRepo
-		TokenRepo tokenRepo
+		UserRepo                 userRepo
+		TokenRepo                tokenRepo
+		AuthenticationSigningKey string
 	}
 )
 
-func NewAuthService(userRepo userRepo, tokenRepo tokenRepo) *AuthService {
+func NewAuthService(userRepo userRepo, tokenRepo tokenRepo, AuthenticationSigningKey string) *AuthService {
 	return &AuthService{
-		UserRepo:  userRepo,
-		TokenRepo: tokenRepo,
+		UserRepo:                 userRepo,
+		TokenRepo:                tokenRepo,
+		AuthenticationSigningKey: AuthenticationSigningKey,
 	}
 }
 
@@ -82,13 +83,13 @@ func (as *AuthService) LoginUser(ctx context.Context, req params.LoginUserReques
 	}
 
 	if token != nil {
-		_, err = token.IsTokenValid([]byte(constanta.AuthenticationSigningKey))
+		_, err = token.IsTokenValid([]byte(as.AuthenticationSigningKey))
 		if err == nil {
 			return token.Token, nil
 		}
 	}
 
-	token, err = entity.NewToken([]byte(constanta.AuthenticationSigningKey), user.ID, "LOGIN")
+	token, err = entity.NewToken([]byte(as.AuthenticationSigningKey), user.ID, "LOGIN")
 	if err != nil {
 		return "", err
 	}
@@ -104,7 +105,7 @@ func (as *AuthService) LoginUser(ctx context.Context, req params.LoginUserReques
 func (as *AuthService) ProcessToken(ctx context.Context, reqToken string) (uuid.UUID, error) {
 	token := &entity.Token{Token: reqToken}
 
-	tokenID, err := token.IsTokenValid([]byte(constanta.AuthenticationSigningKey))
+	tokenID, err := token.IsTokenValid([]byte(as.AuthenticationSigningKey))
 	if err != nil {
 		return uuid.UUID{}, err
 	}

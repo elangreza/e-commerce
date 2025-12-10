@@ -8,7 +8,7 @@ Built with the **Saga orchestration pattern and a central orchestrator**. The or
 
 ## HIGH PRIORITY TASKS
 
-- TODO setup env config management. High priority. Easier deployment across environments
+- TODO fix all client, use grpc client interface directly instead of making a package for each service, use like API-service
 - TODO API get product with shop is active or not
 - TODO Add unit tests. High priority. Confidence to ship faster
 - TODO ADD integration with mocked payment service, add docker file

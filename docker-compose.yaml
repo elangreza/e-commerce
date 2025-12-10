@@ -8,43 +8,38 @@ services:
       dockerfile: ./api/Dockerfile
     ports:
       - "8080:8080"
-    environment:
-      - PRODUCT_SERVICE_ADDR=product:50052
-      - WAREHOUSE_SERVICE_ADDR=warehouse:50053
-      - SHOP_SERVICE_ADDR=shop:50054
+    env_file:
+      - ./envs/api.env
     restart: unless-stopped
 
   order:
     build:
       context: .
       dockerfile: ./order/Dockerfile
-    # ports:
-    #   - "50051:50051"
-    environment:
-      - PRODUCT_SERVICE_ADDR=product:50052
-      - WAREHOUSE_SERVICE_ADDR=warehouse:50053
+    env_file:
+      - ./envs/order.env
     restart: unless-stopped
 
   product:
     build:
       context: .
       dockerfile: ./product/Dockerfile
-    # ports:
-    #   - "50052:50052"
+    env_file:
+      - ./envs/product.env
     restart: unless-stopped
 
   warehouse:
     build:
       context: .
       dockerfile: ./warehouse/Dockerfile
-    # ports:
-    #   - "50053:50053"
+    env_file:
+      - ./envs/warehouse.env
     restart: unless-stopped
 
   shop:
     build:
       context: .
       dockerfile: ./shop/Dockerfile
-    # ports:
-    #   - "50054:50054"
+    env_file:
+      - ./envs/shop.env
     restart: unless-stopped
