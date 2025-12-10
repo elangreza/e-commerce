@@ -8,8 +8,7 @@ Built with the **Saga orchestration pattern and a central orchestrator**. The or
 
 ## HIGH PRIORITY TASKS
 
-- TODO API get product details
-- TODO API view product when shop is active/inactive
+- TODO API get product details with shop name, and shop is active or not
 - TODO Add unit tests. High priority. Confidence to ship faster
 - TODO ADD integration with mocked payment service
 - TODO Make sure the mocked payment service can be accessed via HTTP / own UI
@@ -54,184 +53,210 @@ here's the list of technologies used in this project:
 
 here's the list of API endpoints exposed by the API service:
 
-- Register a new user  
-  | Field | Value |
-  |-------------------|--------------------------------------------|
-  | **Endpoint** | `POST /auth/register` |
-  | **URL** | `http://localhost:8080/auth/register` |
-  | **Content-Type** | `application/json` |
-  | **Success Code** | `201 Created` |
-  | **Description** | Registers a new user account with email, password, and name. |
+### Register a new user
 
-  **Example:**
-
-  ```bash
-  curl --location 'http://localhost:8080/auth/register' \
-  --header 'Content-Type: application/json' \
-  --data-raw '{
-      "email":"test@test.com",
-      "password":"test",
-      "name":"test"
-  }'
-  ```
-
----
-
-- Login and obtain a JWT token  
-  | Field | Value |
-  |-------------------|--------------------------------------------|
-  | **Endpoint** | `POST /auth/login` |
-  | **URL** | `http://localhost:8080/auth/login` |
-  | **Content-Type** | `application/json` |
-  | **Success Code** | `200 OK` |
-  | **Description** | Authenticates a user and returns a JWT for protected endpoints. |
-
-  **Example:**
-
-  ```bash
-  curl --location 'http://localhost:8080/auth/login' \
-  --header 'Content-Type: application/json' \
-  --data-raw '{
-      "email":"test@test.com",
-      "password":"test"
-  }'
-  ```
-
----
-
-- Get a list of products  
-  | Field | Value |
-  |-------------------|--------------------------------------------|
-  | **Endpoint** | `GET /products` |
-  | **URL** | `http://localhost:8080/products` |
-  | **Content-Type** | — |
-  | **Success Code** | `200 OK` |
-  | **Description** | Retrieves a paginated, optionally filtered list of products. Supports `page`, `limit`, and `search` query parameters. |
-
-  **Example:**
-
-  ```bash
-  curl --location 'http://localhost:8080/products?page=2&limit=10&search=men'
-  ```
-
----
-
-- Add a product to the cart  
-  | Field | Value |
-  |-------------------|--------------------------------------------|
-  | **Endpoint** | `POST /cart` |
-  | **URL** | `http://localhost:8080/cart` |
-  | **Content-Type** | `application/json` |
-  | **Authorization** | `Bearer <JWT>` |
-  | **Success Code** | `201 Created` |
-  | **Description** | Adds a specified quantity of a product to the authenticated user’s cart. |
-
-  **Example:**
-
-  ```bash
-  curl --location 'http://localhost:8080/cart' \
-  --header 'Content-Type: application/json' \
-  --header 'Authorization: Bearer {{token from login API}}' \
-  --data '{
-      "product_id":"019394d0-4d5e-7d6a-9c4b-8a3f2e1d5ca2",
-      "quantity":79
-  }'
-  ```
-
----
-
-- Get the current cart contents  
-  | Field | Value |
-  |-------------------|--------------------------------------------|
-  | **Endpoint** | `GET /cart` |
-  | **URL** | `http://localhost:8080/cart` |
-  | **Content-Type** | — |
-  | **Authorization** | `Bearer <JWT>` |
-  | **Success Code** | `200 OK` |
-  | **Description** | Returns the full contents of the authenticated user’s shopping cart. |
-
-  **Example:**
-
-  ```bash
-  curl --location 'http://localhost:8080/cart' \
-  --header 'Authorization: Bearer {{token from login API}}'
-  ```
-
----
-
-- Create a new order based on the cart  
-  | Field | Value |
-  |-------------------|--------------------------------------------|
-  | **Endpoint** | `POST /order` |
-  | **URL** | `http://localhost:8080/order` |
-  | **Content-Type** | `application/json` |
-  | **Authorization** | `Bearer <JWT>` |
-  | **Success Code** | `201 Created` |
-  | **Description** | Converts the user’s current cart into a confirmed order. Uses an `idempotency_key` to prevent duplicate submissions. |
-
-  **Example:**
-
-  ```bash
-  curl --location 'http://localhost:8080/order' \
-  --header 'Content-Type: application/json' \
-  --header 'Authorization: Bearer {{token from login API}}' \
-  --data '{
-      "idempotency_key":"75b12b36-8547-4c02-9783-d42007f6a92a"
-  }'
-  ```
-
----
-
-- Set warehouse status (active/inactive)  
-  | Field | Value |
-  |-------------------|--------------------------------------------|
-  | **Endpoint** | `POST /warehouse/status` |
-  | **URL** | `http://localhost:8080/warehouse/status` |
-  | **Content-Type** | `application/json` |
-  | **Authorization** | `Bearer <JWT>` |
-  | **Success Code** | `200 OK` |
-  | **Description** | Updates the operational status (`is_active`) of a warehouse. Typically restricted to admin users. |
-
-  **Example:**
-
-  ```bash
-  curl --location 'http://localhost:8080/warehouse/status' \
-  --header 'Content-Type: application/json' \
-  --header 'Authorization: Bearer {{token from login API}}' \
-  --data '{
-      "warehouse_id":1,
-      "is_active": true
-  }'
-  ```
-
----
-
-- Transfer stock between warehouses  
-  | Field | Value |
-  |-------------------|--------------------------------------------|
-  | **Endpoint** | `POST /warehouse/transfer` |
-  | **URL** | `http://localhost:8080/warehouse/transfer` |
-  | **Content-Type** | `application/json` |
-  | **Authorization** | `Bearer <JWT>` |
-  | **Success Code** | `200 OK` |
-  | **Description** | Moves a specified quantity of a product from one warehouse to another. Requires admin privileges. |
-
-  **Example:**
-
-  ```bash
-  curl --location 'http://localhost:8080/warehouse/transfer' \
-  --header 'Content-Type: application/json' \
-  --header 'Authorization: Bearer {{token from login API}}' \
-  --data '{
-      "from_warehouse_id": 1,
-      "to_warehouse_id": 3,
-      "product_id": "019394d0-4d5e-7d6a-9c4b-8a3f2e1d5ca2",
-      "quantity": 10
-  }'
-  ```
+| Field            | Value                                                        |
+| ---------------- | ------------------------------------------------------------ |
+| **Endpoint**     | `POST /auth/register`                                        |
+| **URL**          | `http://localhost:8080/auth/register`                        |
+| **Content-Type** | `application/json`                                           |
+| **Success Code** | `201 Created`                                                |
+| **Description**  | Registers a new user account with email, password, and name. |
 
 <details>
-<summary><b><i>Click me for important info!</i></b></summary>
-More details here.
+<summary><b><i>Click here for the curl!</i></b></summary>
+
+```bash
+curl --location 'http://localhost:8080/auth/register' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "email":"test@test.com",
+    "password":"test",
+    "name":"test"
+}'
+```
+
+</details>
+
+---
+
+### Login and obtain a JWT token
+
+| Field            | Value                                                           |
+| ---------------- | --------------------------------------------------------------- |
+| **Endpoint**     | `POST /auth/login`                                              |
+| **URL**          | `http://localhost:8080/auth/login`                              |
+| **Content-Type** | `application/json`                                              |
+| **Success Code** | `200 OK`                                                        |
+| **Description**  | Authenticates a user and returns a JWT for protected endpoints. |
+
+<details>
+<summary><b><i>Click here for the curl!</i></b></summary>
+
+```bash
+curl --location 'http://localhost:8080/auth/login' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "email":"test@test.com",
+    "password":"test"
+}'
+```
+
+</details>
+
+---
+
+### Get a list of products
+
+| Field            | Value                                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Endpoint**     | `GET /products`                                                                                                       |
+| **URL**          | `http://localhost:8080/products`                                                                                      |
+| **Content-Type** | —                                                                                                                     |
+| **Success Code** | `200 OK`                                                                                                              |
+| **Description**  | Retrieves a paginated, optionally filtered list of products. Supports `page`, `limit`, and `search` query parameters. |
+
+<details>
+<summary><b><i>Click here for the curl!</i></b></summary>
+
+```bash
+curl --location 'http://localhost:8080/products?page=2&limit=10&search=men'
+```
+
+</details>
+
+---
+
+### Add a product to the cart
+
+| Field             | Value                                                                    |
+| ----------------- | ------------------------------------------------------------------------ |
+| **Endpoint**      | `POST /cart`                                                             |
+| **URL**           | `http://localhost:8080/cart`                                             |
+| **Content-Type**  | `application/json`                                                       |
+| **Authorization** | `Bearer <JWT>`                                                           |
+| **Success Code**  | `201 Created`                                                            |
+| **Description**   | Adds a specified quantity of a product to the authenticated user’s cart. |
+
+<details>
+<summary><b><i>Click here for the curl!</i></b></summary>
+
+```bash
+curl --location 'http://localhost:8080/cart' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer {{token from login API}}' \
+--data '{
+    "product_id":"019394d0-4d5e-7d6a-9c4b-8a3f2e1d5ca2",
+    "quantity":79
+}'
+```
+
+</details>
+
+---
+
+### Get the current cart contents
+
+| Field             | Value                                                                |
+| ----------------- | -------------------------------------------------------------------- |
+| **Endpoint**      | `GET /cart`                                                          |
+| **URL**           | `http://localhost:8080/cart`                                         |
+| **Content-Type**  | —                                                                    |
+| **Authorization** | `Bearer <JWT>`                                                       |
+| **Success Code**  | `200 OK`                                                             |
+| **Description**   | Returns the full contents of the authenticated user’s shopping cart. |
+
+<details>
+<summary><b><i>Click here for the curl!</i></b></summary>
+
+```bash
+curl --location 'http://localhost:8080/cart' \
+--header 'Authorization: Bearer {{token from login API}}'
+```
+
+</details>
+
+---
+
+### Create a new order based on the cart
+
+| Field             | Value                                                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Endpoint**      | `POST /order`                                                                                                        |
+| **URL**           | `http://localhost:8080/order`                                                                                        |
+| **Content-Type**  | `application/json`                                                                                                   |
+| **Authorization** | `Bearer <JWT>`                                                                                                       |
+| **Success Code**  | `201 Created`                                                                                                        |
+| **Description**   | Converts the user’s current cart into a confirmed order. Uses an `idempotency_key` to prevent duplicate submissions. |
+
+<details>
+<summary><b><i>Click here for the curl!</i></b></summary>
+
+```bash
+curl --location 'http://localhost:8080/order' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer {{token from login API}}' \
+--data '{
+    "idempotency_key":"75b12b36-8547-4c02-9783-d42007f6a92a"
+}'
+```
+
+</details>
+
+---
+
+### Set warehouse status (active/inactive)
+
+| Field             | Value                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------- |
+| **Endpoint**      | `POST /warehouse/status`                                                                          |
+| **URL**           | `http://localhost:8080/warehouse/status`                                                          |
+| **Content-Type**  | `application/json`                                                                                |
+| **Authorization** | `Bearer <JWT>`                                                                                    |
+| **Success Code**  | `200 OK`                                                                                          |
+| **Description**   | Updates the operational status (`is_active`) of a warehouse. Typically restricted to admin users. |
+
+<details>
+<summary><b><i>Click here for the curl!</i></b></summary>
+
+```bash
+curl --location 'http://localhost:8080/warehouse/status' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer {{token from login API}}' \
+--data '{
+    "warehouse_id":1,
+    "is_active": true
+}'
+```
+
+</details>
+
+---
+
+### Transfer stock between warehouses
+
+| Field             | Value                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------- |
+| **Endpoint**      | `POST /warehouse/transfer`                                                                        |
+| **URL**           | `http://localhost:8080/warehouse/transfer`                                                        |
+| **Content-Type**  | `application/json`                                                                                |
+| **Authorization** | `Bearer <JWT>`                                                                                    |
+| **Success Code**  | `200 OK`                                                                                          |
+| **Description**   | Moves a specified quantity of a product from one warehouse to another. Requires admin privileges. |
+
+<details>
+<summary><b><i>Click here for the curl!</i></b></summary>
+
+```bash
+curl --location 'http://localhost:8080/warehouse/transfer' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer {{token from login API}}' \
+--data '{
+    "from_warehouse_id": 1,
+    "to_warehouse_id": 3,
+    "product_id": "019394d0-4d5e-7d6a-9c4b-8a3f2e1d5ca2",
+    "quantity": 10
+}'
+```
 
 </details>
