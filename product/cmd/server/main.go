@@ -34,7 +34,7 @@ func main() {
 	warehouseClient, err := client.NewWarehouseClient()
 	errChecker(err)
 
-	address := "localhost:50052"
+	address := ":50052"
 
 	productService := service.NewProductService(productRepo, warehouseClient)
 	srv := server.New(productService)

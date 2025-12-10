@@ -8,8 +8,6 @@ services:
       dockerfile: ./api/Dockerfile
     ports:
       - "8080:8080"
-    volumes:
-      - ./api/auth.db:/app/auth.db
     environment:
       - PRODUCT_SERVICE_ADDR=product:50052
       - WAREHOUSE_SERVICE_ADDR=warehouse:50053
@@ -22,8 +20,6 @@ services:
       dockerfile: ./order/Dockerfile
     ports:
       - "50051:50051"
-    volumes:
-      - ./order/order.db:/app/order.db
     environment:
       - PRODUCT_SERVICE_ADDR=product:50052
       - WAREHOUSE_SERVICE_ADDR=warehouse:50053
@@ -35,8 +31,6 @@ services:
       dockerfile: ./product/Dockerfile
     ports:
       - "50052:50052"
-    volumes:
-      - ./product/product.db:/app/product.db
     restart: unless-stopped
 
   warehouse:
@@ -45,8 +39,6 @@ services:
       dockerfile: ./warehouse/Dockerfile
     ports:
       - "50053:50053"
-    volumes:
-      - ./warehouse/warehouse.db:/app/warehouse.db
     restart: unless-stopped
 
   shop:
@@ -55,6 +47,4 @@ services:
       dockerfile: ./shop/Dockerfile
     ports:
       - "50054:50054"
-    volumes:
-      - ./shop/shop.db:/app/shop.db
     restart: unless-stopped

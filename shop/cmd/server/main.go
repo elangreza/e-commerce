@@ -33,7 +33,7 @@ func main() {
 	shopRepo := sqlitedb.NewShopRepo(db)
 	shopService := service.NewShopService(shopRepo, warehouseClient)
 
-	address := "localhost:50054"
+	address := ":50054"
 
 	srv := server.New(shopService)
 	go func() {

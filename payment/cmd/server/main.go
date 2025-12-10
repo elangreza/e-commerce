@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"log"
 
 	"github.com/elangreza/e-commerce/payment/internal/server"
@@ -30,7 +28,7 @@ func main() {
 	paymentService := service.NewPaymentService(paymentRepo)
 	srv := server.New(paymentService)
 
-	address := fmt.Sprintf(":%v", 50053)
+	address := ":50053"
 
 	if err := srv.Start(address); err != nil {
 		log.Fatalf("failed to serve: %v", err)

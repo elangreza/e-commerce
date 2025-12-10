@@ -48,7 +48,7 @@ func main() {
 		paymentClient)
 
 	srv := server.New(orderService)
-	address := "localhost:50051"
+	address := ":50051"
 	go func() {
 		if err := srv.Start(address); err != nil {
 			log.Fatalf("failed to serve: %v", err)
