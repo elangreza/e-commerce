@@ -16,7 +16,7 @@ type (
 )
 
 func NewPaymentClient() (*paymentServiceClient, error) {
-	grpcClient, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcClient, err := grpc.NewClient("payment:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}

@@ -15,7 +15,7 @@ type (
 )
 
 func NewWarehouseClient() (*warehouseServiceClient, error) {
-	grpcClient, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcClient, err := grpc.NewClient("warehouse:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}

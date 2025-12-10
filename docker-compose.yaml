@@ -18,8 +18,8 @@ services:
     build:
       context: .
       dockerfile: ./order/Dockerfile
-    ports:
-      - "50051:50051"
+    # ports:
+    #   - "50051:50051"
     environment:
       - PRODUCT_SERVICE_ADDR=product:50052
       - WAREHOUSE_SERVICE_ADDR=warehouse:50053
@@ -29,22 +29,22 @@ services:
     build:
       context: .
       dockerfile: ./product/Dockerfile
-    ports:
-      - "50052:50052"
+    # ports:
+    #   - "50052:50052"
     restart: unless-stopped
 
   warehouse:
     build:
       context: .
       dockerfile: ./warehouse/Dockerfile
-    ports:
-      - "50053:50053"
+    # ports:
+    #   - "50053:50053"
     restart: unless-stopped
 
   shop:
     build:
       context: .
       dockerfile: ./shop/Dockerfile
-    ports:
-      - "50054:50054"
+    # ports:
+    #   - "50054:50054"
     restart: unless-stopped

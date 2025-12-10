@@ -24,8 +24,6 @@ type productService struct {
 	shopServiceClient    gen.ShopServiceClient
 }
 
-// TODO add params with ids
-// and adjust GetProductsDetails with only one id
 func (s *productService) ListProducts(ctx context.Context, req params.ListProductsRequest) (*params.ListProductsResponse, error) {
 	listProduct, err := s.productServiceClient.ListProducts(ctx, &gen.ListProductsRequest{
 		Search: req.Search,
@@ -49,17 +47,9 @@ func (s *productService) ListProducts(ctx context.Context, req params.ListProduc
 		shopIDs = append(shopIDs, product.ShopId)
 	}
 
-	shops, err := s.shopServiceClient.GetShops(ctx, &gen.GetShopsRequest{
-		Ids:            shopIDs,
-		WithWarehouses: false,
-	})
+	shopMap, err := s.getShopMap(ctx, shopIDs)
 	if err != nil {
 		return nil, convertErrGrpc(err)
-	}
-
-	shopsMap := make(map[int64]string)
-	for _, shop := range shops.Shops {
-		shopsMap[shop.GetId()] = shop.Name
 	}
 
 	for _, product := range listProduct.Products {
@@ -75,7 +65,7 @@ func (s *productService) ListProducts(ctx context.Context, req params.ListProduc
 			},
 			ShopID: product.GetShopId(),
 		}
-		shopName, ok := shopsMap[product.GetShopId()]
+		shopName, ok := shopMap[product.GetShopId()]
 		if ok {
 			p.ShopName = shopName
 		}
@@ -91,14 +81,22 @@ func (s *productService) GetProductsDetails(ctx context.Context, req params.GetP
 		WithStock: req.WithStock,
 	})
 	if err != nil {
-		return nil, err
+		return nil, convertErrGrpc(err)
+	}
+
+	shopIDs := []int64{}
+	for _, product := range listProduct.Products {
+		shopIDs = append(shopIDs, product.ShopId)
+	}
+
+	shopMap, err := s.getShopMap(ctx, shopIDs)
+	if err != nil {
+		return nil, convertErrGrpc(err)
 	}
 
 	res := &params.ListProductsResponse{
 		Products: []*params.Product{},
 	}
-
-	// TODO add stock details
 
 	for _, product := range listProduct.Products {
 		p := &params.Product{
@@ -115,7 +113,29 @@ func (s *productService) GetProductsDetails(ctx context.Context, req params.GetP
 			p.Stock = product.GetStock()
 		}
 		res.Products = append(res.Products, p)
+		shopName, ok := shopMap[product.GetShopId()]
+		if ok {
+			p.ShopName = shopName
+		}
+		res.Products = append(res.Products, p)
 	}
 
 	return res, nil
+}
+
+func (s *productService) getShopMap(ctx context.Context, shopIDs []int64) (map[int64]string, error) {
+	shops, err := s.shopServiceClient.GetShops(ctx, &gen.GetShopsRequest{
+		Ids:            shopIDs,
+		WithWarehouses: false,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	shopsMap := make(map[int64]string)
+	for _, shop := range shops.Shops {
+		shopsMap[shop.GetId()] = shop.Name
+	}
+
+	return shopsMap, nil
 }

@@ -8,10 +8,10 @@ Built with the **Saga orchestration pattern and a central orchestrator**. The or
 
 ## HIGH PRIORITY TASKS
 
-- TODO add dockerfile for each service. High priority. Easier deployment
-- TODO API get product details with shop name, and shop is active or not
+- TODO setup env config management. High priority. Easier deployment across environments
+- TODO API get product with shop is active or not
 - TODO Add unit tests. High priority. Confidence to ship faster
-- TODO ADD integration with mocked payment service
+- TODO ADD integration with mocked payment service, add docker file
 - TODO Make sure the mocked payment service can be accessed via HTTP / own UI
 - TODO Write integration tests. High priority. Confidence to ship faster
 - TODO Add CI/CD pipeline. High priority. Automate testing & deployment

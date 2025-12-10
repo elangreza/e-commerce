@@ -51,19 +51,19 @@ func main() {
 	authService := service.NewAuthService(userRepo, tokenRepo)
 
 	// order
-	grpcClientOrder, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcClientOrder, err := grpc.NewClient("order:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 
 	// product
-	grpcClientProduct, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcClientProduct, err := grpc.NewClient("product:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 
 	// warehouse
-	grpcClientWarehouse, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcClientWarehouse, err := grpc.NewClient("warehouse:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 
 	// shop
-	grpcClientShop, err := grpc.NewClient("localhost:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcClientShop, err := grpc.NewClient("shop:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 
 	productService := service.NewProductService(gen.NewProductServiceClient(grpcClientProduct), gen.NewShopServiceClient(grpcClientShop))
