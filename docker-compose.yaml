@@ -43,3 +43,11 @@ services:
     env_file:
       - ./shop/shop.env
     restart: unless-stopped
+
+  payment:
+    build:
+      context: .
+      dockerfile: ./payment/Dockerfile
+    env_file:
+      - ./payment/payment.env
+    restart: unless-stopped

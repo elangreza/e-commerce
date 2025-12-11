@@ -40,7 +40,6 @@ func main() {
 		dbsql.WithAutoSeeder("file://./migrations/seed"),
 	)
 	errChecker(err)
-	defer db.Close()
 
 	productRepo := sqlitedb.NewProductRepository(db)
 

@@ -33,7 +33,6 @@ func main() {
 		dbsql.WithAutoSeeder("file://./migrations/seed"),
 	)
 	errChecker(err)
-	defer db.Close()
 
 	warehouseRepo := sqlitedb.NewWarehouseRepo(db)
 	warehouseService := service.NewWarehouseService(warehouseRepo)

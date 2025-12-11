@@ -36,10 +36,6 @@ type (
 		GetExpiryOrders(ctx context.Context, duration time.Duration) ([]entity.Order, error)
 		UpdateOrderStatusWithCallback(ctx context.Context, status constanta.OrderStatus, orderID uuid.UUID, callback func() error) error
 	}
-
-	paymentServiceClient interface {
-		ProcessPayment(ctx context.Context, totalAmount *gen.Money, orderID uuid.UUID) (*gen.ProcessPaymentResponse, error)
-	}
 )
 
 type orderService struct {
@@ -47,7 +43,7 @@ type orderService struct {
 	cartRepo               cartRepo
 	warehouseServiceClient gen.WarehouseServiceClient
 	productServiceClient   gen.ProductServiceClient
-	paymentServiceClient   paymentServiceClient
+	paymentServiceClient   gen.PaymentServiceClient
 	gen.UnimplementedOrderServiceServer
 }
 
@@ -56,7 +52,7 @@ func NewOrderService(
 	cartRepo cartRepo,
 	warehouseServiceClient gen.WarehouseServiceClient,
 	productServiceClient gen.ProductServiceClient,
-	paymentServiceClient paymentServiceClient,
+	paymentServiceClient gen.PaymentServiceClient,
 ) *orderService {
 	return &orderService{
 		orderRepo:              orderRepo,
@@ -324,7 +320,10 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 	}
 
 	// Process payment
-	paymentTransaction, err := s.paymentServiceClient.ProcessPayment(ctx, order.TotalAmount, orderID)
+	paymentTransaction, err := s.paymentServiceClient.ProcessPayment(ctx, &gen.ProcessPaymentRequest{
+		OrderId:     orderID.String(),
+		TotalAmount: totalAmount,
+	})
 	if err != nil {
 		// Release reserved stock
 		_, releaseErr := s.warehouseServiceClient.ReleaseStock(ctx, &gen.ReleaseStockRequest{

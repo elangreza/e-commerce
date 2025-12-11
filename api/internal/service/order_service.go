@@ -58,7 +58,6 @@ func (s *orderService) GetCart(ctx context.Context) (*params.GetCartResponse, er
 	newCtx := metadata.NewOutgoingContext(context.Background(), md)
 
 	cart, err := s.orderServiceClient.GetCart(newCtx, &gen.Empty{})
-
 	if err != nil {
 		return nil, convertErrGrpc(err)
 	}

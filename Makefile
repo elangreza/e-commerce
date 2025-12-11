@@ -19,6 +19,7 @@ build: build-builder build-runtime
 	cp ./product/env.example ./product/product.env
 	cp ./warehouse/env.example ./warehouse/warehouse.env
 	cp ./shop/env.example ./shop/shop.env
+	cp ./payment/env.example ./payment/payment.env
 	docker compose up --build 
 
 .PHONY: gen build

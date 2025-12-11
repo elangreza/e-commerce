@@ -3,6 +3,7 @@ package errs
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type NotFound struct {
@@ -12,6 +13,10 @@ type NotFound struct {
 func (e NotFound) Error() string {
 	if e.Message == "" {
 		return "not found"
+	}
+
+	if strings.Contains(e.Message, "not found") {
+		return e.Message
 	}
 
 	return fmt.Sprintf("%s not found", e.Message)

@@ -14,7 +14,6 @@ import (
 
 	"log"
 
-	"github.com/elangreza/e-commerce/order/internal/client"
 	"github.com/elangreza/e-commerce/order/internal/server"
 	"github.com/elangreza/e-commerce/order/internal/service"
 	"github.com/elangreza/e-commerce/order/internal/sqlitedb"
@@ -28,6 +27,7 @@ type Config struct {
 	ProductServiceAddr   string `koanf:"PRODUCT_SERVICE_ADDR"`
 	WarehouseServiceAddr string `koanf:"WAREHOUSE_SERVICE_ADDR"`
 	ShopServiceAddr      string `koanf:"SHOP_SERVICE_ADDR"`
+	PaymentServiceAddr   string `koanf:"PAYMENT_SERVICE_ADDR"`
 }
 
 func main() {
@@ -44,19 +44,16 @@ func main() {
 		dbsql.WithAutoMigrate("file://./migrations"),
 	)
 	errChecker(err)
-	defer db.Close()
 
 	cartRepo := sqlitedb.NewCartRepository(db)
 	orderRepo := sqlitedb.NewOrderRepository(db)
-
-	// TODO payment service later
-	paymentClient, err := client.NewPaymentClient()
-	errChecker(err)
 
 	// grpc clients
 	grpcClientProduct, err := grpc.NewClient(cfg.ProductServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 	grpcClientWarehouse, err := grpc.NewClient(cfg.WarehouseServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	errChecker(err)
+	grpcClientPayment, err := grpc.NewClient(cfg.PaymentServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 
 	orderService := service.NewOrderService(
@@ -64,7 +61,7 @@ func main() {
 		cartRepo,
 		gen.NewWarehouseServiceClient(grpcClientWarehouse),
 		gen.NewProductServiceClient(grpcClientProduct),
-		paymentClient)
+		gen.NewPaymentServiceClient(grpcClientPayment))
 
 	srv := server.New(orderService)
 	addr := fmt.Sprintf(":%s", cfg.ServicePort)
