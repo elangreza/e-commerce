@@ -33,7 +33,6 @@ func (to *TaskOrder) SetRemoveExpiryDuration(d time.Duration) {
 	to.removeExpiryDuration = d
 }
 
-// REMOVE EXPIRY ORDER EVERY THREE MINUTES
 func (to *TaskOrder) removeExpiryOrder() error {
 	expiryOrder, err := to.svc.RemoveExpiryOrder(context.Background(), to.removeExpiryDuration)
 	if err != nil {
@@ -43,7 +42,7 @@ func (to *TaskOrder) removeExpiryOrder() error {
 	if expiryOrder > 0 {
 		fmt.Printf("removing %d order(s)\n", expiryOrder)
 	} else {
-		fmt.Println("no expiry order")
+		// fmt.Println("no expiry order")
 	}
 
 	return nil
@@ -54,12 +53,12 @@ func (to *TaskOrder) Close() {
 }
 
 func (to *TaskOrder) backgroundJobs() {
+	fmt.Println("running order backgroundJobs")
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
-			fmt.Println("running order backgroundJobs")
 
 			if to.removeExpiryDuration > 0 {
 				err := to.removeExpiryOrder()

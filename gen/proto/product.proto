@@ -43,5 +43,6 @@ message ListProductsRequest {
     int64 limit = 2;
     int64 page = 3;
     string sort_by = 4;
+    bool withStock = 5;
 }
 

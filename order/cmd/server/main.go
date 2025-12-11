@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/pkg/config"
 	"github.com/elangreza/e-commerce/pkg/dbsql"
 	"github.com/elangreza/e-commerce/pkg/gracefulshutdown"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"log"
 
@@ -45,19 +48,22 @@ func main() {
 
 	cartRepo := sqlitedb.NewCartRepository(db)
 	orderRepo := sqlitedb.NewOrderRepository(db)
-	warehouseClient, err := client.NewWarehouseClient(cfg.WarehouseServiceAddr)
-	errChecker(err)
-	productClient, err := client.NewProductClient(cfg.ProductServiceAddr)
-	errChecker(err)
+
 	// TODO payment service later
 	paymentClient, err := client.NewPaymentClient()
+	errChecker(err)
+
+	// grpc clients
+	grpcClientProduct, err := grpc.NewClient(cfg.ProductServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	errChecker(err)
+	grpcClientWarehouse, err := grpc.NewClient(cfg.WarehouseServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 
 	orderService := service.NewOrderService(
 		orderRepo,
 		cartRepo,
-		warehouseClient,
-		productClient,
+		gen.NewWarehouseServiceClient(grpcClientWarehouse),
+		gen.NewProductServiceClient(grpcClientProduct),
 		paymentClient)
 
 	srv := server.New(orderService)

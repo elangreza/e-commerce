@@ -23,13 +23,9 @@ type (
 		TotalProducts(ctx context.Context, req entity.ListProductRequest) (int64, error)
 		GetProductByIDs(ctx context.Context, ID ...uuid.UUID) ([]entity.Product, error)
 	}
-
-	warehouseServiceClient interface {
-		GetStocks(ctx context.Context, productIds []string) (*gen.StockList, error)
-	}
 )
 
-func NewProductService(productRepo productRepo, warehouseServiceClient warehouseServiceClient) *productService {
+func NewProductService(productRepo productRepo, warehouseServiceClient gen.WarehouseServiceClient) *productService {
 	return &productService{
 		productRepo:            productRepo,
 		warehouseServiceClient: warehouseServiceClient,
@@ -38,7 +34,7 @@ func NewProductService(productRepo productRepo, warehouseServiceClient warehouse
 
 type productService struct {
 	productRepo            productRepo
-	warehouseServiceClient warehouseServiceClient
+	warehouseServiceClient gen.WarehouseServiceClient
 	gen.UnimplementedProductServiceServer
 }
 
@@ -72,16 +68,24 @@ func (p *productService) ListProducts(ctx context.Context, req *gen.ListProducts
 		return nil, err
 	}
 
-	productResponses := make([]*gen.Product, len(products))
-	for i, product := range products {
-		stocks, err := p.warehouseServiceClient.GetStocks(ctx, []string{product.ID.String()})
+	var stockMap map[string]int64
+	if req.WithStock {
+		stockMap, err = p.getStockMap(ctx, products)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	productResponses := make([]*gen.Product, len(products))
+	for i, product := range products {
 		var stock int64 = 0
-		for _, v := range stocks.Stocks {
-			stock += v.Quantity
+		if req.WithStock {
+			stk, ok := stockMap[product.ID.String()]
+			if ok {
+				stock = stk
+			}
 		}
+
 		productResponses[i] = &gen.Product{
 			Id:          product.ID.String(),
 			Name:        product.Name,
@@ -119,20 +123,25 @@ func (p *productService) GetProducts(ctx context.Context, req *gen.GetProductsRe
 		return nil, err
 	}
 
-	res := []*gen.Product{}
-	for _, product := range products {
+	var stockMap map[string]int64
+	if req.WithStock {
+		stockMap, err = p.getStockMap(ctx, products)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	productResponses := make([]*gen.Product, len(products))
+	for i, product := range products {
 		var stock int64 = 0
 		if req.WithStock {
-			stocks, err := p.warehouseServiceClient.GetStocks(ctx, []string{product.ID.String()})
-			if err != nil {
-				return nil, err
-			}
-			for _, v := range stocks.Stocks {
-				stock += v.Quantity
+			stk, ok := stockMap[product.ID.String()]
+			if ok {
+				stock = stk
 			}
 		}
 
-		res = append(res, &gen.Product{
+		productResponses[i] = &gen.Product{
 			Id:          product.ID.String(), // Convert UUID to string
 			Name:        product.Name,
 			Description: product.Description,
@@ -140,10 +149,43 @@ func (p *productService) GetProducts(ctx context.Context, req *gen.GetProductsRe
 			ImageUrl:    product.ImageUrl,
 			Stock:       stock,
 			ShopId:      product.ShopID,
-		})
+		}
 	}
 
 	return &gen.Products{
-		Products: res,
+		Products: productResponses,
 	}, nil
+}
+
+func (p *productService) getStockMap(ctx context.Context, products []entity.Product) (map[string]int64, error) {
+	if len(products) == 0 {
+		return nil, nil
+	}
+
+	productIDs := []string{}
+	for _, p := range products {
+		productIDs = append(productIDs, p.ID.String())
+	}
+
+	stocks, err := p.warehouseServiceClient.GetStocks(ctx,
+		&gen.GetStockRequest{
+			ProductIds: productIDs,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	res := make(map[string]int64)
+	for _, v := range stocks.Stocks {
+		var stock int64
+		stock += v.Quantity
+		val, ok := res[v.ProductId]
+		if ok {
+			res[v.ProductId] = val + stock
+		} else {
+			res[v.ProductId] = stock
+		}
+	}
+
+	return res, nil
 }

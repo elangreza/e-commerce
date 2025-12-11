@@ -6,11 +6,13 @@ import (
 	"log"
 	"time"
 
+	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/pkg/config"
 	"github.com/elangreza/e-commerce/pkg/dbsql"
 	"github.com/elangreza/e-commerce/pkg/gracefulshutdown"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/elangreza/e-commerce/product/internal/client"
 	"github.com/elangreza/e-commerce/product/internal/server"
 	"github.com/elangreza/e-commerce/product/internal/service"
 	"github.com/elangreza/e-commerce/product/internal/sqlitedb"
@@ -41,12 +43,14 @@ func main() {
 	defer db.Close()
 
 	productRepo := sqlitedb.NewProductRepository(db)
-	warehouseClient, err := client.NewWarehouseClient(cfg.WarehouseServiceAddr)
+
+	// warehouse
+	grpcClientWarehouse, err := grpc.NewClient(cfg.WarehouseServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	errChecker(err)
 
-	addr := fmt.Sprintf(":%s", cfg.ServicePort)
+	productService := service.NewProductService(productRepo, gen.NewWarehouseServiceClient(grpcClientWarehouse))
 
-	productService := service.NewProductService(productRepo, warehouseClient)
+	addr := fmt.Sprintf(":%s", cfg.ServicePort)
 	srv := server.New(productService)
 	go func() {
 		if err := srv.Start(addr); err != nil {

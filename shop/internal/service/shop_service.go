@@ -13,18 +13,14 @@ type (
 		GetShopByIDs(ctx context.Context, IDs ...int64) ([]entity.Shop, error)
 	}
 
-	warehouseClient interface {
-		GetWarehouseByShopID(ctx context.Context, shopID int64) (*gen.GetWarehouseByShopIDResponse, error)
-	}
-
 	ShopService struct {
 		repo            ShopRepo
-		warehouseClient warehouseClient
+		warehouseClient gen.WarehouseServiceClient
 		gen.UnimplementedShopServiceServer
 	}
 )
 
-func NewShopService(repo ShopRepo, warehouseClient warehouseClient) *ShopService {
+func NewShopService(repo ShopRepo, warehouseClient gen.WarehouseServiceClient) *ShopService {
 	return &ShopService{
 		repo:            repo,
 		warehouseClient: warehouseClient,
@@ -47,7 +43,9 @@ func (s *ShopService) GetShops(ctx context.Context, req *gen.GetShopsRequest) (*
 
 		if req.WithWarehouses {
 			var err error
-			wRes, err := s.warehouseClient.GetWarehouseByShopID(ctx, shop.ID)
+			wRes, err := s.warehouseClient.GetWarehouseByShopID(ctx, &gen.GetWarehouseByShopIDRequest{
+				ShopId: shop.ID,
+			})
 			if err != nil {
 				return nil, err
 			}

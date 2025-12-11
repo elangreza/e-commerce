@@ -16,6 +16,7 @@ import (
 	"github.com/elangreza/e-commerce/order/internal/entity"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -36,16 +37,6 @@ type (
 		UpdateOrderStatusWithCallback(ctx context.Context, status constanta.OrderStatus, orderID uuid.UUID, callback func() error) error
 	}
 
-	warehouseServiceClient interface {
-		GetStocks(ctx context.Context, productIds []string) (*gen.StockList, error)
-		ReserveStock(ctx context.Context, orderID uuid.UUID, cartItem []entity.CartItem) (*gen.ReserveStockResponse, error)
-		ReleaseStock(ctx context.Context, orderID uuid.UUID) (*gen.ReleaseStockResponse, error)
-	}
-
-	productServiceClient interface {
-		GetProducts(ctx context.Context, withStock bool, productIds ...string) (*gen.Products, error)
-	}
-
 	paymentServiceClient interface {
 		ProcessPayment(ctx context.Context, totalAmount *gen.Money, orderID uuid.UUID) (*gen.ProcessPaymentResponse, error)
 	}
@@ -54,8 +45,8 @@ type (
 type orderService struct {
 	orderRepo              orderRepo
 	cartRepo               cartRepo
-	warehouseServiceClient warehouseServiceClient
-	productServiceClient   productServiceClient
+	warehouseServiceClient gen.WarehouseServiceClient
+	productServiceClient   gen.ProductServiceClient
 	paymentServiceClient   paymentServiceClient
 	gen.UnimplementedOrderServiceServer
 }
@@ -63,14 +54,14 @@ type orderService struct {
 func NewOrderService(
 	orderRepo orderRepo,
 	cartRepo cartRepo,
-	stockServiceClient warehouseServiceClient,
-	productServiceClient productServiceClient,
+	warehouseServiceClient gen.WarehouseServiceClient,
+	productServiceClient gen.ProductServiceClient,
 	paymentServiceClient paymentServiceClient,
 ) *orderService {
 	return &orderService{
 		orderRepo:              orderRepo,
 		cartRepo:               cartRepo,
-		warehouseServiceClient: stockServiceClient,
+		warehouseServiceClient: warehouseServiceClient,
 		productServiceClient:   productServiceClient,
 		paymentServiceClient:   paymentServiceClient,
 	}
@@ -88,7 +79,10 @@ func (s *orderService) AddProductToCart(ctx context.Context, req *gen.AddCartIte
 	}
 
 	withStock := true
-	products, err := s.productServiceClient.GetProducts(ctx, withStock, req.ProductId)
+	products, err := s.productServiceClient.GetProducts(ctx, &gen.GetProductsRequest{
+		Ids:       []string{req.ProductId},
+		WithStock: withStock,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +167,9 @@ func (s *orderService) GetCart(ctx context.Context, req *gen.Empty) (*gen.Cart, 
 		productIDs = append(productIDs, item.ProductID)
 	}
 
-	stocks, err := s.warehouseServiceClient.GetStocks(ctx, productIDs)
+	stocks, err := s.warehouseServiceClient.GetStocks(ctx, &gen.GetStockRequest{
+		ProductIds: productIDs,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +229,10 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 	totalAmount, _ := money.New(0, "IDR")
 
 	var withStock = false
-	products, err := s.productServiceClient.GetProducts(ctx, withStock, cart.GetProductIDs()...)
+	products, err := s.productServiceClient.GetProducts(ctx, &gen.GetProductsRequest{
+		Ids:       cart.GetProductIDs(),
+		WithStock: withStock,
+	})
 	if err != nil {
 		return nil, errors.New("failed to fetch products")
 	}
@@ -300,11 +299,21 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 		}, orderID)
 	}
 
-	ctx = context.WithValue(ctx, globalcontanta.UserIDKey, userID)
+	ctx = AppendUserIDintoContextGrpcClient(ctx, userID)
 
 	// Reserve stock
-	// reserveIDs, err := s.warehouseServiceClient.ReserveStock(ctx, cart.Items)
-	_, err = s.warehouseServiceClient.ReserveStock(ctx, orderID, cart.Items)
+
+	stocks := []*gen.Stock{}
+	for _, item := range cart.Items {
+		stocks = append(stocks, &gen.Stock{
+			ProductId: item.ProductID,
+			Quantity:  item.Quantity,
+		})
+	}
+	_, err = s.warehouseServiceClient.ReserveStock(ctx, &gen.ReserveStockRequest{
+		OrderId: orderID.String(),
+		Stocks:  stocks,
+	})
 	if err != nil {
 		rollbackErr := rollback()
 		if rollbackErr != nil {
@@ -318,7 +327,9 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 	paymentTransaction, err := s.paymentServiceClient.ProcessPayment(ctx, order.TotalAmount, orderID)
 	if err != nil {
 		// Release reserved stock
-		_, releaseErr := s.warehouseServiceClient.ReleaseStock(ctx, orderID)
+		_, releaseErr := s.warehouseServiceClient.ReleaseStock(ctx, &gen.ReleaseStockRequest{
+			OrderId: orderID.String(),
+		})
 		if releaseErr != nil {
 			// Log - stock might be stuck in reserved state
 			fmt.Printf("Error releasing stock during payment failure: %v", releaseErr)
@@ -370,8 +381,10 @@ func (s *orderService) RemoveExpiryOrder(ctx context.Context, duration time.Dura
 
 		if order.Status == constanta.OrderStatusStockReserved {
 			var releaseStock = func() error {
-				ctx = context.WithValue(context.Background(), globalcontanta.UserIDKey, order.UserID)
-				_, err := s.warehouseServiceClient.ReleaseStock(ctx, order.ID)
+				ctx := AppendUserIDintoContextGrpcClient(context.Background(), order.UserID)
+				_, err := s.warehouseServiceClient.ReleaseStock(ctx, &gen.ReleaseStockRequest{
+					OrderId: order.ID.String(),
+				})
 				if err != nil {
 					return err
 				}
@@ -388,4 +401,9 @@ func (s *orderService) RemoveExpiryOrder(ctx context.Context, duration time.Dura
 	}
 
 	return len(orders), nil
+}
+
+func AppendUserIDintoContextGrpcClient(ctx context.Context, userID uuid.UUID) context.Context {
+	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
+	return metadata.NewOutgoingContext(ctx, md)
 }
