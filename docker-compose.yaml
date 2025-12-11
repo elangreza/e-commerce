@@ -9,7 +9,7 @@ services:
     ports:
       - "8080:8080"
     env_file:
-      - ./envs/api.env
+      - ./api/api.env
     restart: unless-stopped
 
   order:
@@ -17,7 +17,7 @@ services:
       context: .
       dockerfile: ./order/Dockerfile
     env_file:
-      - ./envs/order.env
+      - ./order/order.env
     restart: unless-stopped
 
   product:
@@ -25,7 +25,7 @@ services:
       context: .
       dockerfile: ./product/Dockerfile
     env_file:
-      - ./envs/product.env
+      - ./product/product.env
     restart: unless-stopped
 
   warehouse:
@@ -33,7 +33,7 @@ services:
       context: .
       dockerfile: ./warehouse/Dockerfile
     env_file:
-      - ./envs/warehouse.env
+      - ./warehouse/warehouse.env
     restart: unless-stopped
 
   shop:
@@ -41,5 +41,5 @@ services:
       context: .
       dockerfile: ./shop/Dockerfile
     env_file:
-      - ./envs/shop.env
+      - ./shop/shop.env
     restart: unless-stopped
