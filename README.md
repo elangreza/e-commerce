@@ -8,7 +8,14 @@ Built with the **Saga orchestration pattern and a central orchestrator**. The or
 
 ## HIGH PRIORITY TASKS
 
-- TODO ADD integration with mocked payment service, add docker file
+- TODO ADD flow order success
+
+  - TODO send callback from payment service
+  - TODO add background worker to limit payment waiting time, must be less than order timeout process in order service
+
+- TODO ADD order details in order service
+  - TODO ADD product details in product service
+  - TODO ADD product details in BFF / API service
 - TODO API get product with shop is active or not
 - TODO Add unit tests. High priority. Confidence to ship faster
 - TODO Make sure the mocked payment service can be accessed via HTTP / own UI
@@ -17,6 +24,7 @@ Built with the **Saga orchestration pattern and a central orchestrator**. The or
 - TODO add better error handling. High priority. Improve reliability
 - TODO add logging. High priority. Easier debugging, observability
 - TODO add user role, can get from content-management system repo (CMS) later and restrict the warehouse management endpoints to admin users only
+- TODO save time in UTC format in the database
 
 ## MEDIUM PRIORITY TASKS
 

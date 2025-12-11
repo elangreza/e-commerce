@@ -43,6 +43,7 @@ message Order {
   repeated OrderItem items = 4;
   Money total_amount = 5;
   string status = 6;
+  string transaction_id = 7;
 }
 
 message CreateOrderRequest {

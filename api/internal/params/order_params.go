@@ -47,10 +47,11 @@ type (
 	}
 
 	CreateOrderResponse struct {
-		OrderID     string                 `json:"order_id"`
-		TotalAmount *Money                 `json:"total_amount"`
-		Status      string                 `json:"status"`
-		Items       []GetCartItemsResponse `json:"items"`
+		OrderID       string                 `json:"order_id"`
+		TotalAmount   *Money                 `json:"total_amount"`
+		Status        string                 `json:"status"`
+		Items         []GetCartItemsResponse `json:"items"`
+		TransactionID string                 `json:"transaction_id"`
 	}
 )
 

@@ -43,3 +43,19 @@ func (ps *PaymentStatus) Scan(value interface{}) error {
 
 	return nil
 }
+
+// Implement sql.Scanner interface for reading from database
+func (ps PaymentStatus) String() string {
+	switch ps {
+	case WAITING:
+		return "WAITING"
+	case PAID:
+		return "PAID"
+	case FAILED:
+		return "FAILED"
+	case CANCELLED:
+		return "CANCELLED"
+	default:
+		return "UNKNOWN"
+	}
+}

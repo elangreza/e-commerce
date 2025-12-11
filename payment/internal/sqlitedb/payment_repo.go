@@ -3,6 +3,7 @@ package sqlitedb
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/elangreza/e-commerce/payment/internal/constanta"
@@ -47,17 +48,13 @@ func (p *PaymentRepository) CreatePayment(ctx context.Context, payment entity.Pa
 
 func (p *PaymentRepository) UpdatePaymentStatusByTransactionID(ctx context.Context, paymentStatus constanta.PaymentStatus, transactionID string) error {
 	q := `UPDATE payments
-		SET status = ? AND updated_at = ?
+		SET status = ?, updated_at = ?
 		WHERE transaction_id = ?;`
 
-	id, err := uuid.NewV7()
-	if err != nil {
-		return err
-	}
+	fmt.Println(paymentStatus.String(), transactionID)
 
-	_, err = p.db.ExecContext(ctx, q,
-		id,
-		paymentStatus,
+	_, err := p.db.ExecContext(ctx, q,
+		paymentStatus.String(),
 		time.Now(),
 		transactionID,
 	)
@@ -68,7 +65,7 @@ func (p *PaymentRepository) UpdatePaymentStatusByTransactionID(ctx context.Conte
 	return nil
 }
 
-func (p *PaymentRepository) GetPaymentStatusByTransactionID(ctx context.Context, transactionID string) (*entity.Payment, error) {
+func (p *PaymentRepository) GetPaymentByTransactionID(ctx context.Context, transactionID string) (*entity.Payment, error) {
 	q := `SELECT 
 	id,
 	status,

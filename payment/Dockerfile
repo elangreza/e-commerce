@@ -14,6 +14,7 @@ FROM e-commerce/runtime-base:latest
 WORKDIR /app
 COPY --from=builder /app/bin/payment .
 COPY --from=builder /app/payment/migrations ./migrations
+COPY --from=builder /app/payment/templates ./templates
 RUN chmod +x ./payment
-EXPOSE 50051
+EXPOSE 50051 8081
 CMD ["./payment"]

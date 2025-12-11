@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Transaction #{{.Transaction.ID}}</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 800px;
+        margin: 3rem auto;
+      }
+      .expired {
+        background: #fff3cd;
+        padding: 0.5rem;
+        border-radius: 4px;
+      }
+      .status-waiting {
+        color: green;
+      }
+      .status-paid {
+        color: blue;
+      }
+      .status-red {
+        color: red;
+      }
+      input[type="number"] {
+        /* width: 100%;  */
+        padding: 0.5rem;
+        margin: 0.5rem 0;
+      }
+      button {
+        padding: 0.5rem 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Transaction #{{.Transaction.ID}}</h2>
+
+    {{if .Error}}
+    <p style="color: red">{{.Error}}</p>
+    {{else}}
+    <p>
+      <strong>Status:</strong>
+      {{if eq .Transaction.Status "WAITING"}}
+      <span class="status-waiting">WAITING</span>
+      {{else if eq .Transaction.Status "PAID"}}
+      <span class="status-paid">PAID</span>
+      {{else if eq .Transaction.Status "FAILED"}}
+      <span class="status-red">FAILED</span>
+      {{else if eq .Transaction.Status "CANCELLED"}}
+      <span class="status-red">CANCELLED</span>
+      {{else}}
+      <span class="status-red">Unknown Status</span>
+      {{end}}
+    </p>
+    <b>Total Amount: {{.Transaction.TotalAmount}}</b>
+    {{if eq .Transaction.Status "WAITING"}}
+    <form method="POST">
+      <p>
+        Created at:
+        <b>{{.Transaction.CreatedAt}}</b>
+      </p>
+      <p>
+        if total amount is equal with actual, the status will be changed to
+        <b>PAID</b>.
+      </p>
+      <p>
+        if the transaction is not proceed until
+        <b>{{.Transaction.ExpiredAt}}</b>, the status will be changed to
+        <b>CANCELLED</b>.
+      </p>
+      <p>
+        if total amount is less than or more than actual, the status will be
+        changed to <b>FAILED</b>.
+      </p>
+      <label for="payment">Pay now:</label>
+      <input
+        type="number"
+        id="payment"
+        name="payment_amount"
+        step="0.01"
+        required
+      />
+      <button type="submit">Submit Payment</button>
+    </form>
+    {{else}}
+    <p><em>Transaction is finalized.</em></p>
+    {{end}} {{end}}
+
+    <a href="/">back to home</a>
+  </body>
+</html>

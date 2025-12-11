@@ -48,6 +48,8 @@ services:
     build:
       context: .
       dockerfile: ./payment/Dockerfile
+    ports:
+      - "8081:8081"
     env_file:
       - ./payment/payment.env
     restart: unless-stopped

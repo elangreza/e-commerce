@@ -357,6 +357,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 
 	order.ID = orderID
 	order.Status = constanta.OrderStatusStockReserved
+	order.TransactionID = paymentTransaction.TransactionId
 
 	return order.GetGenOrder(), nil
 }

@@ -96,19 +96,20 @@ func (s *orderService) CreateOrder(ctx context.Context, req params.CreateOrderRe
 	}
 
 	res := &params.CreateOrderResponse{
-		OrderID: order.Id,
+		OrderID: order.GetId(),
 		Items:   []params.GetCartItemsResponse{},
 		TotalAmount: &params.Money{
-			Units:        order.TotalAmount.Units,
-			CurrencyCode: order.TotalAmount.CurrencyCode,
+			Units:        order.GetTotalAmount().GetUnits(),
+			CurrencyCode: order.GetTotalAmount().GetCurrencyCode(),
 		},
-		Status: order.Status,
+		Status:        order.GetStatus(),
+		TransactionID: order.GetTransactionId(),
 	}
 
 	for _, item := range order.Items {
 		res.Items = append(res.Items, params.GetCartItemsResponse{
-			ProductID: item.ProductId,
-			Quantity:  item.Quantity,
+			ProductID: item.GetProductId(),
+			Quantity:  item.GetQuantity(),
 		})
 	}
 

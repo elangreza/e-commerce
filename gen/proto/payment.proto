@@ -22,7 +22,30 @@ message RollbackPaymentRequest {
   string reason = 2;
 }
 
+message UpdatePaymentRequest {
+  string transaction_id = 1;
+  Money total_amount = 2;
+}
+
+message UpdatePaymentResponse {
+  string status = 1;
+}
+
+message GetPaymentRequest {
+  string transaction_id = 1;
+}
+
+message GetPaymentResponse {
+  string transaction_id = 1;
+  string status = 2;
+  Money total_amount = 3;
+  string created_at = 4;
+  string expired_at = 5;
+}
+
 service PaymentService {
     rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse) {}
     rpc RollbackPayment(RollbackPaymentRequest) returns (Empty) {}
+    rpc UpdatePayment(UpdatePaymentRequest) returns (UpdatePaymentResponse) {}
+    rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse) {}
 }

@@ -9,6 +9,8 @@ replace github.com/elangreza/e-commerce/pkg => ../pkg
 require (
 	github.com/elangreza/e-commerce/gen v0.0.0-00010101000000-000000000000
 	github.com/elangreza/e-commerce/pkg v0.0.0-00010101000000-000000000000
+	github.com/go-chi/chi/v5 v5.2.3
+	github.com/go-chi/cors v1.2.2
 	github.com/golang-migrate/migrate/v4 v4.19.0
 	github.com/google/uuid v1.6.0
 	google.golang.org/grpc v1.77.0

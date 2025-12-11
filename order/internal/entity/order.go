@@ -51,5 +51,6 @@ func (ord *Order) GetGenOrder() *gen.Order {
 		TotalAmount:    ord.TotalAmount,
 		Status:         ord.Status.String(),
 		IdempotencyKey: ord.IdempotencyKey.String(),
+		TransactionId:  ord.TransactionID,
 	}
 }

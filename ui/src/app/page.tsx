@@ -42,8 +42,6 @@ export default async function Home({ searchParams }: PageProps) {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-gray-600">
-
-
       <main className="min-h-screen w-full max-w-5xl flex-col items-center justify-between p-10 bg-white dark:bg-gray-500 sm:items-start">
         {errorMsg ? (
           <div className="w-full p-6">
