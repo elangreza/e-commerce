@@ -42,6 +42,11 @@ func NewDbSql(options ...Option) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS _initialized (id INTEGER)")
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+
 	if config.MaxOpenConns > 0 {
 		db.SetMaxOpenConns(config.MaxOpenConns)
 	}

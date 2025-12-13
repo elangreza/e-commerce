@@ -50,6 +50,11 @@ message CreateOrderRequest {
   string idempotency_key = 1;
 }
 
+message CallbackTransactionRequest {
+  string transaction_id = 1;
+  string payment_status = 2;
+}
+
 // this service contains all the methods related to checkout and order management
 // this require user_id from context metadata
 // all user must be authenticated to access this service
@@ -60,4 +65,5 @@ service OrderService {
     rpc AddProductToCart(AddCartItemRequest) returns (Empty) {}
     rpc GetCart(Empty) returns (Cart) {}
     rpc CreateOrder(CreateOrderRequest) returns (Order) {}
+    rpc CallbackTransaction(CallbackTransactionRequest) returns (Empty) {}
 }

@@ -52,7 +52,7 @@ func main() {
 	}))
 
 	db, err := dbsql.NewDbSql(
-		dbsql.WithSqliteDB("auth.db"),
+		dbsql.WithSqliteDB("data/auth.db"),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
 	)

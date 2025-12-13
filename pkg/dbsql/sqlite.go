@@ -3,22 +3,36 @@ package dbsql
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	_ "github.com/mattn/go-sqlite3"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func WithSqliteDB(fileName string) Option {
-	if !fileExists(fileName) {
-		if err := createDBFile(fileName); err != nil {
-			return func(c *Config) error {
-				return err
-			}
-		}
-	}
+// func WithSqliteDB(fileName string) Option {
+// 	if !fileExists(fileName) {
+// 		if err := createDBFile(fileName); err != nil {
+// 			return func(c *Config) error {
+// 				return err
+// 			}
+// 		}
+// 	}
 
+// 	return func(c *Config) error {
+// 		c.DriverName = "sqlite3"
+// 		c.DataSourceName = fileName
+// 		return nil
+// 	}
+// }
+
+func WithSqliteDB(fileName string) Option {
 	return func(c *Config) error {
+		// Just ensure the directory exists; SQLite will create the file
+		dir := filepath.Dir(fileName)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create db dir: %w", err)
+		}
 		c.DriverName = "sqlite3"
 		c.DataSourceName = fileName
 		return nil
@@ -40,7 +54,25 @@ func fileExists(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
+func ensureDir(fileName string) error {
+	dirName := filepath.Dir(fileName)
+	if _, err := os.Stat(dirName); os.IsNotExist(err) {
+		// Directory does not exist, create it with permissions 0755
+		err = os.MkdirAll(dirName, 0777)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func createDBFile(filename string) error {
+
+	err := ensureDir(filename)
+	if err != nil {
+		return err
+	}
+
 	file, err := os.Create(filename)
 	if err != nil {
 		return err

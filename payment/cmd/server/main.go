@@ -36,7 +36,7 @@ func main() {
 	// github.com/samber/slog-zap
 
 	db, err := dbsql.NewDbSql(
-		dbsql.WithSqliteDB("payment.db"),
+		dbsql.WithSqliteDB("data/payment.db"),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
 	)
@@ -111,91 +111,3 @@ func errChecker(err error) {
 		log.Fatal(err)
 	}
 }
-
-// var tmpl *template.Template
-
-// type PageData struct {
-// 	// Shared
-// 	Error string
-
-// 	// Index
-// 	TransactionID string
-
-// 	// Detail
-// 	Transaction   *Transaction
-// 	PaymentAmount string
-
-// 	// Status
-// 	FinalStatus string
-// }
-
-// type Transaction struct {
-// 	ID          string
-// 	TotalAmount float64
-// 	Status      constanta.PaymentStatus
-// 	IsExpired   bool
-// 	ExpiredAt   string
-// }
-
-// // 1. INDEX PAGE: Enter transaction ID
-// func indexHandler(w http.ResponseWriter, r *http.Request) {
-// 	if r.Method == "POST" {
-// 		idStr := strings.TrimSpace(r.FormValue("transaction_id"))
-// 		if idStr == "" {
-// 			tmpl.ExecuteTemplate(w, "index.html", PageData{Error: "Invalid transaction ID"})
-// 			return
-// 		}
-
-// 		// Redirect to detail page
-// 		http.Redirect(w, r, "/transaction/"+idStr, http.StatusSeeOther)
-// 		return
-// 	}
-
-// 	tmpl.ExecuteTemplate(w, "index.html", PageData{})
-// }
-
-// // 2. TRANSACTION DETAIL PAGE
-// func detailHandler(w http.ResponseWriter, r *http.Request) {
-// 	// Extract ID from URL path
-// 	idStr := strings.TrimPrefix(r.URL.Path, "/transaction/")
-// 	if idStr == "" {
-// 		http.Error(w, "Invalid transaction ID", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	// Fetch transaction
-// 	var t = Transaction{
-// 		ID:          idStr,
-// 		TotalAmount: 10000,
-// 		Status:      constanta.WAITING,
-// 		ExpiredAt:   time.Now().Add(3 * time.Minute).Format(time.DateTime),
-// 	}
-
-// 	if r.Method == "POST" {
-// 		if t.Status != "pending" {
-// 			// Already finalized – redirect to status
-// 			http.Redirect(w, r, "/status/"+idStr, http.StatusSeeOther)
-// 			return
-// 		}
-
-// 		paymentStr := strings.TrimSpace(r.FormValue("payment_amount"))
-// 		_, err := strconv.ParseFloat(paymentStr, 64)
-// 		if err != nil {
-// 			data := PageData{
-// 				Transaction:   &t,
-// 				PaymentAmount: paymentStr,
-// 				Error:         "Invalid payment amount",
-// 			}
-// 			tmpl.ExecuteTemplate(w, "detail.html", data)
-// 			return
-// 		}
-
-// 		return
-// 	}
-
-// 	// Render detail page
-// 	data := PageData{
-// 		Transaction: &t,
-// 	}
-// 	tmpl.ExecuteTemplate(w, "detail.html", data)
-// }

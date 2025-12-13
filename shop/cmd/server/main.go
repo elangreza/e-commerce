@@ -31,7 +31,7 @@ func main() {
 	errChecker(err)
 
 	db, err := dbsql.NewDbSql(
-		dbsql.WithSqliteDB("shop.db"),
+		dbsql.WithSqliteDB("data/shop.db"),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
 		dbsql.WithAutoSeeder("file://./migrations/seed"),

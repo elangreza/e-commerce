@@ -4,9 +4,9 @@ this is a simple e-commerce application that allows users to place orders for pr
 
 Built with the **Saga orchestration pattern and a central orchestrator**. The orchestrator runs each step needed to complete an order, makes sure steps happen in the right order, and handles failures cleanly. This project does not use a **choreography (event-driven / decentralized)** approach.
 
-# TASKS
+## TASKS
 
-## HIGH PRIORITY TASKS
+### HIGH PRIORITY TASKS
 
 - TODO ADD flow order success
 
@@ -25,18 +25,19 @@ Built with the **Saga orchestration pattern and a central orchestrator**. The or
 - TODO add logging. High priority. Easier debugging, observability
 - TODO add user role, can get from content-management system repo (CMS) later and restrict the warehouse management endpoints to admin users only
 - TODO save time in UTC format in the database
+- TODO docker file with volume
 
-## MEDIUM PRIORITY TASKS
+### MEDIUM PRIORITY TASKS
 
 - TODO Build compensation retry system. Medium priority. Ensures system recovers from failures
 - TODO Add structured logging & tracing. Medium priority. Faster debugging
 
-## LOW PRIORITY TASKS
+### LOW PRIORITY TASKS
 
 - TODO Add basic health/metrics. Low priority. Operational awareness
 - TODO Add authentication/authorization. Low priority. Secure access in API service
 
-# ARCHITECTURE OVERVIEW
+## ARCHITECTURE OVERVIEW
 
 The application is composed of the following microservices:
 

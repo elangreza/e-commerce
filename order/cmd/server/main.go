@@ -39,7 +39,7 @@ func main() {
 	// github.com/samber/slog-zap
 
 	db, err := dbsql.NewDbSql(
-		dbsql.WithSqliteDB("order.db"),
+		dbsql.WithSqliteDB("data/order.db"),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
 	)
