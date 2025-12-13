@@ -23,12 +23,13 @@ import (
 )
 
 type Config struct {
-	ServicePort          string `koanf:"SERVICE_PORT"`
-	DBPath               string `koanf:"DB_PATH"`
-	ProductServiceAddr   string `koanf:"PRODUCT_SERVICE_ADDR"`
-	WarehouseServiceAddr string `koanf:"WAREHOUSE_SERVICE_ADDR"`
-	ShopServiceAddr      string `koanf:"SHOP_SERVICE_ADDR"`
-	PaymentServiceAddr   string `koanf:"PAYMENT_SERVICE_ADDR"`
+	ServicePort          string        `koanf:"SERVICE_PORT"`
+	DBPath               string        `koanf:"DB_PATH"`
+	ProductServiceAddr   string        `koanf:"PRODUCT_SERVICE_ADDR"`
+	WarehouseServiceAddr string        `koanf:"WAREHOUSE_SERVICE_ADDR"`
+	ShopServiceAddr      string        `koanf:"SHOP_SERVICE_ADDR"`
+	PaymentServiceAddr   string        `koanf:"PAYMENT_SERVICE_ADDR"`
+	MaxTimeToBeExpired   time.Duration `koanf:"MAX_TIME_TO_BE_EXPIRED"`
 }
 
 func main() {
@@ -81,8 +82,7 @@ func main() {
 
 	fmt.Printf("ORDER-service running at %s\n", addr)
 
-	taskOrder := task.NewTaskOrder(orderService)
-	taskOrder.SetRemoveExpiryDuration(3 * time.Minute)
+	taskOrder := task.NewTaskOrder(orderService, 3*time.Minute)
 
 	gs := gracefulshutdown.New(context.Background(), 5*time.Second,
 		gracefulshutdown.Operation{

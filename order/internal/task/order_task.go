@@ -18,19 +18,16 @@ type (
 	}
 )
 
-func NewTaskOrder(orderService orderService) *TaskOrder {
+func NewTaskOrder(orderService orderService, duration time.Duration) *TaskOrder {
 	to := &TaskOrder{
-		closeChan: make(chan struct{}),
-		svc:       orderService,
+		closeChan:            make(chan struct{}),
+		svc:                  orderService,
+		removeExpiryDuration: duration,
 	}
 
 	go to.backgroundJobs()
 
 	return to
-}
-
-func (to *TaskOrder) SetRemoveExpiryDuration(d time.Duration) {
-	to.removeExpiryDuration = d
 }
 
 func (to *TaskOrder) removeExpiryOrder() error {

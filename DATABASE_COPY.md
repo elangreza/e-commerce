@@ -38,6 +38,7 @@ make copy-to-local
 ```
 
 This will:
+
 - Copy all `*/data/` directories to `*/data-local/`
 - Change ownership to your user
 - Allow you to run `make run` locally with Docker's data
@@ -51,6 +52,7 @@ make copy-to-docker
 ```
 
 This will:
+
 - Copy all `*/data-local/` directories to `*/data/`
 - Allow Docker to use your local development data
 - Useful for testing local changes in Docker environment
@@ -95,6 +97,7 @@ docker compose up
 ## What It Does
 
 The script:
+
 1. ✅ Removes the destination directory (to avoid conflicts)
 2. ✅ Copies the source directory recursively
 3. ✅ Changes ownership to your user (for local development)

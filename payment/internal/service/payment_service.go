@@ -23,6 +23,7 @@ type (
 		CreatePayment(ctx context.Context, payment entity.Payment) error
 		UpdatePaymentStatusByTransactionID(ctx context.Context, paymentStatus constanta.PaymentStatus, transactionID string) error
 		GetPaymentByTransactionID(ctx context.Context, transactionID string) (*entity.Payment, error)
+		GetExpiryPayments(ctx context.Context, duration time.Duration) ([]entity.Payment, error)
 	}
 )
 
@@ -151,4 +152,23 @@ func (p *paymentService) UpdatePayment(ctx context.Context, req *gen.UpdatePayme
 	return &gen.UpdatePaymentResponse{
 		Status: "UNKNOWN",
 	}, nil
+}
+
+func (p *paymentService) RemoveExpiryPayment(ctx context.Context, duration time.Duration) (int, error) {
+	payments, err := p.paymentRepo.GetExpiryPayments(ctx, duration)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, payment := range payments {
+		if payment.Status != constanta.WAITING {
+			continue
+		}
+		err = p.paymentRepo.UpdatePaymentStatusByTransactionID(ctx, constanta.FAILED, payment.TransactionID)
+		if err != nil {
+			fmt.Println("err when Update status", err)
+		}
+	}
+
+	return len(payments), nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/elangreza/e-commerce/payment/internal/server"
 	"github.com/elangreza/e-commerce/payment/internal/service"
 	"github.com/elangreza/e-commerce/payment/internal/sqlitedb"
+	"github.com/elangreza/e-commerce/payment/task"
 	"github.com/elangreza/e-commerce/pkg/config"
 	"github.com/elangreza/e-commerce/pkg/dbsql"
 	"github.com/elangreza/e-commerce/pkg/gracefulshutdown"
@@ -92,6 +93,8 @@ func main() {
 		}
 	}()
 
+	taskPayment := task.NewTaskPayment(paymentService, cfg.MaxTimeToBeExpired)
+
 	fmt.Printf("MOCKED-PAYMENT-service running at %s\n", addr)
 	fmt.Println("UI-MOCKED-PAYMENT-service running on :8081")
 
@@ -107,6 +110,19 @@ func main() {
 			Name: "sqlite",
 			ShutdownFunc: func(ctx context.Context) error {
 				return db.Close()
+			},
+		},
+		gracefulshutdown.Operation{
+			Name: "server",
+			ShutdownFunc: func(ctx context.Context) error {
+				return srvHttp.Shutdown(ctx)
+			},
+		},
+		gracefulshutdown.Operation{
+			Name: "task payment",
+			ShutdownFunc: func(ctx context.Context) error {
+				taskPayment.Close()
+				return nil
 			},
 		},
 	)

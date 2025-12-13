@@ -11,6 +11,7 @@ This is a **microservices-based e-commerce application** built with Go, implemen
 ## Architecture Overview
 
 ### Services
+
 1. **API Service** - BFF/Gateway (REST → gRPC)
 2. **Order Service** - Saga orchestrator for order processing
 3. **Product Service** - Product catalog management
@@ -19,6 +20,7 @@ This is a **microservices-based e-commerce application** built with Go, implemen
 6. **Shop Service** - Shop/merchant management
 
 ### Technology Stack
+
 - **Language**: Go
 - **Communication**: gRPC (inter-service), REST (client-facing)
 - **Database**: SQLite3 (dev) / PostgreSQL (production-ready)
@@ -33,6 +35,7 @@ This is a **microservices-based e-commerce application** built with Go, implemen
 ### 1. **Excellent Architectural Patterns**
 
 #### ✅ Orchestrated Saga Pattern
+
 The order service implements a well-structured Saga orchestration:
 
 ```go
@@ -45,12 +48,15 @@ The order service implements a well-structured Saga orchestration:
 ```
 
 **Benefits**:
+
 - Centralized coordination logic
 - Clear transaction boundaries
 - Explicit rollback mechanisms
 
 #### ✅ Clean Separation of Concerns
+
 Each service follows a layered architecture:
+
 - `cmd/` - Entry points
 - `internal/service/` - Business logic
 - `internal/sqlitedb/` - Data access
@@ -60,7 +66,9 @@ Each service follows a layered architecture:
 ### 2. **Good Code Organization**
 
 #### ✅ Shared Package (`pkg/`)
+
 Reusable utilities across services:
+
 - `dbsql` - Database abstraction with migration support
 - `money` - Currency handling (prevents floating-point errors)
 - `extractor` - Metadata extraction utilities
@@ -68,6 +76,7 @@ Reusable utilities across services:
 - `interceptor` - gRPC middleware
 
 #### ✅ Interface-Based Design
+
 Services use interfaces for dependencies, enabling testability:
 
 ```go
@@ -79,6 +88,7 @@ type orderRepo interface {
 ```
 
 ### 3. **Idempotency Support**
+
 Order creation uses idempotency keys to prevent duplicate orders:
 
 ```go
@@ -89,13 +99,17 @@ if ord != nil {
 ```
 
 ### 4. **Database Migration Support**
+
 Automated migrations using `golang-migrate`:
+
 - Version-controlled schema changes
 - Support for both SQLite and PostgreSQL
 - Separate seeder support
 
 ### 5. **Money Handling**
+
 Proper currency handling using protobuf `Money` type:
+
 - Avoids floating-point arithmetic errors
 - Enforces single-currency transactions
 - Safe multiplication and addition operations
@@ -111,22 +125,24 @@ Proper currency handling using protobuf `Money` type:
 **Issue**: Zero test coverage across the entire codebase.
 
 **Impact**:
+
 - No confidence in code correctness
 - High risk of regressions
 - Difficult to refactor safely
 - Cannot validate Saga compensation logic
 
 **Recommendation**:
+
 ```go
 // Example: Order service unit test
 func TestCreateOrder_Success(t *testing.T) {
     mockOrderRepo := mock.NewMockOrderRepo(ctrl)
     mockCartRepo := mock.NewMockCartRepo(ctrl)
     // ... setup mocks
-    
+
     svc := NewOrderService(mockOrderRepo, mockCartRepo, ...)
     order, err := svc.CreateOrder(ctx, req)
-    
+
     assert.NoError(t, err)
     assert.Equal(t, constanta.OrderStatusStockReserved, order.Status)
 }
@@ -141,13 +157,16 @@ func TestCreateOrder_Success(t *testing.T) {
 **Severity**: HIGH
 
 **Issues**:
+
 1. **Printf instead of proper logging**:
+
 ```go
 // ❌ Bad - from order_service.go:317
 fmt.Printf("Error during rollback: %v", rollbackErr)
 ```
 
 2. **Silent error swallowing**:
+
 ```go
 // ❌ Bad - from order_service.go:378
 if err != nil {
@@ -157,6 +176,7 @@ if err != nil {
 ```
 
 3. **Debug print statements in production code**:
+
 ```go
 // ❌ Bad - from payment_service.go:115-154
 fmt.Println("cek", 1)
@@ -165,6 +185,7 @@ fmt.Println("cek", 2)
 ```
 
 4. **Inconsistent error context**:
+
 ```go
 // ❌ Bad
 return nil, errors.New("failed to fetch products")
@@ -174,7 +195,9 @@ return nil, fmt.Errorf("failed to fetch products: %w", err)
 ```
 
 **Recommendations**:
+
 1. **Implement structured logging**:
+
 ```go
 import "log/slog"
 
@@ -185,6 +208,7 @@ logger.Error("rollback failed",
 ```
 
 2. **Return errors instead of logging**:
+
 ```go
 // Let caller decide how to handle
 if err != nil {
@@ -201,6 +225,7 @@ if err != nil {
 **Severity**: HIGH
 
 **Missing**:
+
 - ❌ Structured logging
 - ❌ Distributed tracing
 - ❌ Metrics/monitoring
@@ -210,6 +235,7 @@ if err != nil {
 **Impact**: Impossible to debug production issues in distributed system.
 
 **Recommendations**:
+
 1. **Add structured logging** (slog, zap, or zerolog)
 2. **Implement OpenTelemetry** for tracing
 3. **Add Prometheus metrics**
@@ -225,6 +251,7 @@ if err != nil {
 **Issues**:
 
 1. **Missing payment success callback**:
+
 ```go
 // TODO from README.md:
 // - TODO send callback from payment service
@@ -232,11 +259,13 @@ if err != nil {
 ```
 
 Currently, payment is created with `WAITING` status but there's no mechanism to:
+
 - Confirm payment success
 - Timeout expired payments
 - Notify order service of payment completion
 
 2. **No compensation retry logic**:
+
 ```go
 // From order_service.go:314-318
 _, err = s.warehouseServiceClient.ReserveStock(ctx, req)
@@ -250,6 +279,7 @@ if err != nil {
 **Recommendations**:
 
 1. **Add payment callback endpoint**:
+
 ```go
 // In order service
 func (s *orderService) HandlePaymentCallback(ctx context.Context, req *gen.PaymentCallbackRequest) (*gen.Empty, error) {
@@ -262,6 +292,7 @@ func (s *orderService) HandlePaymentCallback(ctx context.Context, req *gen.Payme
 ```
 
 2. **Implement background worker** for payment timeout:
+
 ```go
 // Periodically check for expired payments
 func (s *orderService) CleanupExpiredPayments() {
@@ -283,6 +314,7 @@ func (s *orderService) CleanupExpiredPayments() {
 **Issues**:
 
 1. **No authorization/RBAC**:
+
 ```go
 // ❌ Anyone with valid JWT can access warehouse management
 r.Use(authMiddleware.MustAuthMiddleware())
@@ -290,6 +322,7 @@ r.Post("/warehouse/status", oh.SetWarehouseStatus())
 ```
 
 2. **CORS allows all origins**:
+
 ```go
 // ❌ api/cmd/server/main.go:48
 AllowedOrigins: []string{"*"},
@@ -300,7 +333,9 @@ AllowedOrigins: []string{"*"},
 4. **No input sanitization** beyond basic validation.
 
 **Recommendations**:
+
 1. **Implement RBAC**:
+
 ```go
 type UserRole string
 const (
@@ -325,6 +360,7 @@ func (m *AuthMiddleware) RequireRole(role UserRole) func(http.Handler) http.Hand
 **Issues**:
 
 1. **Timestamps not in UTC**:
+
 ```go
 // TODO from README.md:
 // - TODO save time in UTC format in the database
@@ -333,6 +369,7 @@ func (m *AuthMiddleware) RequireRole(role UserRole) func(http.Handler) http.Hand
 2. **No connection pooling configuration** in most services.
 
 3. **Potential N+1 queries**:
+
 ```go
 // order_service.go:228-234
 // Fetches all products in one call ✅
@@ -340,15 +377,19 @@ products, err := s.productServiceClient.GetProducts(ctx, &gen.GetProductsRequest
     Ids: cart.GetProductIDs(),
 })
 ```
+
 This is actually well-done, but ensure similar patterns throughout.
 
 **Recommendations**:
+
 1. **Use UTC everywhere**:
+
 ```go
 time.Now().UTC()
 ```
 
 2. **Configure connection pools**:
+
 ```go
 dbsql.WithDBConnectionPool(25, 5, 5*time.Minute)
 ```
@@ -362,6 +403,7 @@ dbsql.WithDBConnectionPool(25, 5, 5*time.Minute)
 **Issues**:
 
 1. **Inconsistent error messages**:
+
 ```go
 // Some use status.Error, some use fmt.Errorf
 return status.Errorf(codes.NotFound, "cart not found")
@@ -369,6 +411,7 @@ return fmt.Errorf("failed to get cart: %w", err)
 ```
 
 2. **Magic numbers**:
+
 ```go
 // order_service.go:91
 if req.Quantity > product.Stock {
@@ -377,21 +420,26 @@ if req.Quantity > product.Stock {
 ```
 
 3. **Commented-out code and TODOs in production**:
+
 ```go
 // payment_service.go - multiple "cek" debug prints
 ```
 
 4. **Inconsistent naming**:
+
 ```go
 type AutService interface {} // Should be AuthService
 ```
 
 **Recommendations**:
+
 1. **Standardize error handling** - Choose gRPC status codes for gRPC services.
 2. **Extract constants**:
+
 ```go
 const MaxOrderQuantity = 1000
 ```
+
 3. **Remove debug code** before production.
 4. **Fix typos** and naming inconsistencies.
 
@@ -417,11 +465,13 @@ From the README TODO list:
 **Current State**: Basic Docker Compose setup works well.
 
 **Issues**:
+
 1. **No health checks** in docker-compose.yaml
 2. **No resource limits**
 3. **No CI/CD pipeline**
 
 **Recommendations**:
+
 ```yaml
 services:
   api:
@@ -433,7 +483,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 512M
 ```
 
@@ -442,6 +492,7 @@ services:
 ## Positive Patterns to Maintain
 
 ### ✅ 1. **Graceful Shutdown**
+
 ```go
 gs := gracefulshutdown.New(context.Background(), 5*time.Second,
     gracefulshutdown.Operation{
@@ -453,7 +504,9 @@ gs := gracefulshutdown.New(context.Background(), 5*time.Second,
 ```
 
 ### ✅ 2. **Context Propagation**
+
 User ID properly propagated via gRPC metadata:
+
 ```go
 func AppendUserIDintoContextGrpcClient(ctx context.Context, userID uuid.UUID) context.Context {
     md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
@@ -462,6 +515,7 @@ func AppendUserIDintoContextGrpcClient(ctx context.Context, userID uuid.UUID) co
 ```
 
 ### ✅ 3. **Validation at Boundaries**
+
 ```go
 if err := body.Validate(); err != nil {
     sendErrorResponse(w, http.StatusBadRequest, err)
@@ -476,21 +530,25 @@ if err := body.Validate(); err != nil {
 ### 🔥 High Priority (Do First)
 
 1. **Add Unit Tests** (1-2 weeks)
+
    - Start with order service Saga logic
    - Mock external dependencies
    - Target 70%+ coverage for business logic
 
 2. **Implement Structured Logging** (2-3 days)
+
    - Replace all `fmt.Printf` with proper logger
    - Add log levels (debug, info, warn, error)
    - Include context (request ID, user ID, order ID)
 
 3. **Remove Debug Code** (1 day)
+
    - Remove all `fmt.Println("cek", ...)` statements
    - Clean up commented code
    - Fix naming inconsistencies
 
 4. **Complete Payment Flow** (3-5 days)
+
    - Add payment callback endpoint
    - Implement background worker for payment timeout
    - Add order confirmation flow
@@ -503,16 +561,19 @@ if err := body.Validate(); err != nil {
 ### 🟡 Medium Priority (Next Sprint)
 
 6. **Add Integration Tests** (1 week)
+
    - Test full order flow end-to-end
    - Test failure scenarios and rollbacks
    - Use testcontainers for database
 
 7. **Implement Observability** (1-2 weeks)
+
    - Add OpenTelemetry tracing
    - Add Prometheus metrics
    - Set up Grafana dashboards
 
 8. **Add Authorization/RBAC** (3-5 days)
+
    - Define user roles
    - Protect admin endpoints
    - Add role-based middleware
@@ -525,11 +586,13 @@ if err := body.Validate(); err != nil {
 ### 🟢 Low Priority (Future)
 
 10. **Add CI/CD Pipeline**
+
     - GitHub Actions or GitLab CI
     - Automated testing
     - Docker image building
 
 11. **Add Monitoring & Alerting**
+
     - Set up Prometheus + Grafana
     - Alert on high error rates
     - Monitor Saga completion rates
@@ -546,6 +609,7 @@ if err := body.Validate(); err != nil {
 ### Error Handling
 
 #### ❌ Before
+
 ```go
 if rollbackErr != nil {
     fmt.Printf("Error during rollback: %v", rollbackErr)
@@ -553,6 +617,7 @@ if rollbackErr != nil {
 ```
 
 #### ✅ After
+
 ```go
 if rollbackErr != nil {
     logger.Error("order rollback failed",
@@ -568,6 +633,7 @@ if rollbackErr != nil {
 ### Testing
 
 #### ✅ Add This
+
 ```go
 func TestOrderService_CreateOrder_StockReservationFails(t *testing.T) {
     ctrl := gomock.NewController(t)
@@ -579,12 +645,12 @@ func TestOrderService_CreateOrder_StockReservationFails(t *testing.T) {
         Return(nil, errors.New("insufficient stock"))
 
     svc := NewOrderService(orderRepo, cartRepo, mockWarehouse, ...)
-    
+
     _, err := svc.CreateOrder(ctx, validRequest)
-    
+
     assert.Error(t, err)
     assert.Contains(t, err.Error(), "failed to reserve stock")
-    
+
     // Verify order status is FAILED
     order, _ := orderRepo.GetOrderByIdempotencyKey(ctx, idempotencyKey)
     assert.Equal(t, constanta.OrderStatusFailed, order.Status)
@@ -598,12 +664,14 @@ func TestOrderService_CreateOrder_StockReservationFails(t *testing.T) {
 ### Summary
 
 This is a **well-architected microservices application** with solid foundations:
+
 - ✅ Clean architecture and separation of concerns
 - ✅ Proper Saga orchestration pattern
 - ✅ Good use of Go idioms and interfaces
 - ✅ Idempotency and transaction safety
 
 However, it's **not production-ready** due to:
+
 - ❌ Zero test coverage
 - ❌ Poor error handling and logging
 - ❌ No observability

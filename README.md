@@ -11,7 +11,6 @@ Built with the **Saga orchestration pattern and a central orchestrator**. The or
 - TODO ADD flow order success
 
   - TODO send callback from payment service
-  - TODO add background worker to limit payment waiting time, must be less than order timeout process in order service
 
 - TODO ADD order details in order service
   - TODO ADD product details in product service

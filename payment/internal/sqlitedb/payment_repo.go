@@ -102,3 +102,57 @@ func (p *PaymentRepository) GetPaymentByTransactionID(ctx context.Context, trans
 
 	return &payment, nil
 }
+
+func (p *PaymentRepository) GetExpiryPayments(ctx context.Context, duration time.Duration) ([]entity.Payment, error) {
+	q := `SELECT 
+	id,
+	status,
+	total_amount,
+	currency,
+	transaction_id,
+	order_id,
+	created_at,
+	updated_at
+	FROM payments WHERE status = ? AND updated_at < DATETIME(?);`
+
+	timeLimit := time.Now().UTC().Add(-duration)
+
+	rows, err := p.db.QueryContext(ctx,
+		q,
+		constanta.WAITING,
+		timeLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	payments := []entity.Payment{}
+	for rows.Next() {
+		var payment entity.Payment
+		var totalAmount int64
+		var currency string
+		err := rows.Scan(
+			&payment.ID,
+			&payment.Status,
+			&totalAmount,
+			&currency,
+			&payment.TransactionID,
+			&payment.OrderID,
+			&payment.CreatedAt,
+			&payment.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		payment.TotalAmount, err = money.New(totalAmount, currency)
+		if err != nil {
+			return nil, err
+		}
+
+		payments = append(payments, payment)
+	}
+
+	return payments, nil
+}
