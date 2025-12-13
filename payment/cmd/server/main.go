@@ -24,6 +24,7 @@ import (
 
 type Config struct {
 	ServicePort        string        `koanf:"SERVICE_PORT"`
+	DBPath             string        `koanf:"DB_PATH"`
 	MaxTimeToBeExpired time.Duration `koanf:"MAX_TIME_TO_BE_EXPIRED"`
 }
 
@@ -32,11 +33,17 @@ func main() {
 	err := config.LoadConfig(&cfg)
 	errChecker(err)
 
+	// Default to data-local for local development
+	dbPath := cfg.DBPath
+	if dbPath == "" {
+		dbPath = "data-local/payment.db"
+	}
+
 	// implement this later
 	// github.com/samber/slog-zap
 
 	db, err := dbsql.NewDbSql(
-		dbsql.WithSqliteDB("data/payment.db"),
+		dbsql.WithSqliteDB(dbPath),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
 	)

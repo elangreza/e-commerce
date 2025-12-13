@@ -28,9 +28,10 @@ import (
 
 func WithSqliteDB(fileName string) Option {
 	return func(c *Config) error {
-		// Just ensure the directory exists; SQLite will create the file
+		// Ensure the directory exists with 0777 permissions
+		// This allows both Docker containers and local development to write
 		dir := filepath.Dir(fileName)
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0777); err != nil {
 			return fmt.Errorf("failed to create db dir: %w", err)
 		}
 		c.DriverName = "sqlite3"

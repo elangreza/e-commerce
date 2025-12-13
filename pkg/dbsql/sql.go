@@ -3,6 +3,8 @@ package dbsql
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -45,6 +47,19 @@ func NewDbSql(options ...Option) (*sql.DB, error) {
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS _initialized (id INTEGER)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	// For SQLite, set file permissions to 0666 so both Docker and local dev can access
+	if config.DriverName == "sqlite3" {
+		dbPath := extractSQLitePath(config.DataSourceName)
+		if dbPath != "" {
+			// Set file permissions to 0666 (rw-rw-rw-)
+			// This allows both Docker containers and local development to read/write
+			if err := os.Chmod(dbPath, 0666); err != nil {
+				// Don't fail if chmod fails, just log it
+				fmt.Printf("Warning: failed to set database file permissions: %v\n", err)
+			}
+		}
 	}
 
 	if config.MaxOpenConns > 0 {
@@ -153,4 +168,14 @@ func WithAutoSeeder(seederFolder string) Option {
 		c.SeederFolder = seederFolder
 		return nil
 	}
+}
+
+// extractSQLitePath extracts the file path from SQLite connection string
+// Handles cases like "data/auth.db" or "data/auth.db?_journal_mode=WAL"
+func extractSQLitePath(dsn string) string {
+	// Remove query parameters if present
+	if idx := strings.Index(dsn, "?"); idx != -1 {
+		return dsn[:idx]
+	}
+	return dsn
 }

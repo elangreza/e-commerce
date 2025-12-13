@@ -20,7 +20,15 @@ build: build-builder build-runtime
 	cp ./warehouse/env.example ./warehouse/warehouse.env
 	cp ./shop/env.example ./shop/shop.env
 	cp ./payment/env.example ./payment/payment.env
-	docker compose up --build 
+	docker compose up --build
 
-.PHONY: gen build
+copy-to-local:
+	@echo "Copying Docker data to local development..."
+	@chmod +x ./copy-docker-data.sh && ./copy-docker-data.sh to-local
+
+copy-to-docker:
+	@echo "Copying local development data to Docker..."
+	@chmod +x ./copy-docker-data.sh && ./copy-docker-data.sh to-docker
+
+.PHONY: gen build copy-to-local copy-to-docker
 .DEFAULT_GOAL := gen

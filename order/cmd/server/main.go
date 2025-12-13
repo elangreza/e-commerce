@@ -24,6 +24,7 @@ import (
 
 type Config struct {
 	ServicePort          string `koanf:"SERVICE_PORT"`
+	DBPath               string `koanf:"DB_PATH"`
 	ProductServiceAddr   string `koanf:"PRODUCT_SERVICE_ADDR"`
 	WarehouseServiceAddr string `koanf:"WAREHOUSE_SERVICE_ADDR"`
 	ShopServiceAddr      string `koanf:"SHOP_SERVICE_ADDR"`
@@ -35,11 +36,17 @@ func main() {
 	err := config.LoadConfig(&cfg)
 	errChecker(err)
 
+	// Default to data-local for local development
+	dbPath := cfg.DBPath
+	if dbPath == "" {
+		dbPath = "data-local/order.db"
+	}
+
 	// implement this later
 	// github.com/samber/slog-zap
 
 	db, err := dbsql.NewDbSql(
-		dbsql.WithSqliteDB("data/order.db"),
+		dbsql.WithSqliteDB(dbPath),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
 	)

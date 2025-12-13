@@ -13,3 +13,6 @@ go.work.sum
 *.so
 *.dylib
 *.env
+
+# Local development databases
+*/data-local/

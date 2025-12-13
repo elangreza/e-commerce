@@ -26,6 +26,7 @@ import (
 type Config struct {
 	ServicePort          string `koanf:"SERVICE_PORT"`
 	TokenSecret          string `koanf:"TOKEN_SECRET"`
+	DBPath               string `koanf:"DB_PATH"`
 	OrderServiceAddr     string `koanf:"ORDER_SERVICE_ADDR"`
 	ProductServiceAddr   string `koanf:"PRODUCT_SERVICE_ADDR"`
 	WarehouseServiceAddr string `koanf:"WAREHOUSE_SERVICE_ADDR"`
@@ -36,6 +37,12 @@ func main() {
 	var cfg Config
 	err := config.LoadConfig(&cfg)
 	errChecker(err)
+
+	// Default to data-local for local development
+	dbPath := cfg.DBPath
+	if dbPath == "" {
+		dbPath = "data-local/auth.db"
+	}
 
 	handler := chi.NewRouter()
 	handler.Use(middleware.Recoverer)
@@ -52,7 +59,7 @@ func main() {
 	}))
 
 	db, err := dbsql.NewDbSql(
-		dbsql.WithSqliteDB("data/auth.db"),
+		dbsql.WithSqliteDB(dbPath),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
 	)

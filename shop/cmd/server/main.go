@@ -22,6 +22,7 @@ import (
 
 type Config struct {
 	ServicePort          string `koanf:"SERVICE_PORT"`
+	DBPath               string `koanf:"DB_PATH"`
 	WarehouseServiceAddr string `koanf:"WAREHOUSE_SERVICE_ADDR"`
 }
 
@@ -30,8 +31,14 @@ func main() {
 	err := config.LoadConfig(&cfg)
 	errChecker(err)
 
+	// Default to data-local for local development
+	dbPath := cfg.DBPath
+	if dbPath == "" {
+		dbPath = "data-local/shop.db"
+	}
+
 	db, err := dbsql.NewDbSql(
-		dbsql.WithSqliteDB("data/shop.db"),
+		dbsql.WithSqliteDB(dbPath),
 		dbsql.WithSqliteDBWalMode(),
 		dbsql.WithAutoMigrate("file://./migrations"),
 		dbsql.WithAutoSeeder("file://./migrations/seed"),
