@@ -35,6 +35,7 @@ type (
 		UpdateOrder(ctx context.Context, payloads map[string]any, orderID uuid.UUID) error
 		GetExpiryOrders(ctx context.Context, duration time.Duration) ([]entity.Order, error)
 		UpdateOrderStatusWithCallback(ctx context.Context, status constanta.OrderStatus, orderID uuid.UUID, callback func() error) error
+		GetOrderByTransactionID(ctx context.Context, transactionID string) (*entity.Order, error)
 	}
 )
 
@@ -401,6 +402,46 @@ func (s *orderService) RemoveExpiryOrder(ctx context.Context, duration time.Dura
 	}
 
 	return len(orders), nil
+}
+
+func (s *orderService) CallbackTransaction(ctx context.Context, req *gen.CallbackTransactionRequest) (*gen.Empty, error) {
+	if req.PaymentStatus == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "payment_status cannot be empty")
+	}
+
+	var paymentStatus constanta.PaymentStatus
+	err := paymentStatus.Scan(req.PaymentStatus)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "payment_status is %s, must be one of %s or %s", paymentStatus.String(), constanta.PAID, constanta.FAILED)
+	}
+
+	order, err := s.orderRepo.GetOrderByTransactionID(ctx, req.TransactionId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "order not found")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get order: %v", err)
+	}
+
+	if paymentStatus == constanta.PAID {
+		err = s.orderRepo.UpdateOrder(ctx, map[string]any{
+			"status": constanta.OrderStatusCompleted,
+		}, order.ID)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to update order: %v", err)
+		}
+	}
+
+	if paymentStatus == constanta.FAILED {
+		err = s.orderRepo.UpdateOrder(ctx, map[string]any{
+			"status": constanta.OrderStatusFailed,
+		}, order.ID)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to update order: %v", err)
+		}
+	}
+
+	return &gen.Empty{}, nil
 }
 
 func AppendUserIDintoContextGrpcClient(ctx context.Context, userID uuid.UUID) context.Context {

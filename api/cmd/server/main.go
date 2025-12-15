@@ -37,6 +37,7 @@ func main() {
 	var cfg Config
 	err := config.LoadConfig(&cfg)
 	errChecker(err)
+	fmt.Printf("cfg %+v\n", cfg)
 
 	// Default to data-local for local development
 	dbPath := cfg.DBPath
@@ -50,7 +51,7 @@ func main() {
 	handler.Use(middleware.Timeout(60 * time.Second))
 	handler.Use(middleware.RequestID)
 	handler.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:8080"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		ExposedHeaders:   []string{"Content-Length", "Content-Type"},

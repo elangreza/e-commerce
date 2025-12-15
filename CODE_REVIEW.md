@@ -160,61 +160,61 @@ func TestCreateOrder_Success(t *testing.T) {
 
 1. **Printf instead of proper logging**:
 
-```go
-// ❌ Bad - from order_service.go:317
-fmt.Printf("Error during rollback: %v", rollbackErr)
-```
+   ```go
+   // ❌ Bad - from order_service.go:317
+   fmt.Printf("Error during rollback: %v", rollbackErr)
+   ```
 
 2. **Silent error swallowing**:
 
-```go
-// ❌ Bad - from order_service.go:378
-if err != nil {
-    fmt.Println("err when Update status", err)
-}
-// Continues execution despite error
-```
+   ```go
+   // ❌ Bad - from order_service.go:378
+   if err != nil {
+       fmt.Println("err when Update status", err)
+   }
+   // Continues execution despite error
+   ```
 
 3. **Debug print statements in production code**:
 
-```go
-// ❌ Bad - from payment_service.go:115-154
-fmt.Println("cek", 1)
-fmt.Println("cek", 2)
-// ... scattered throughout
-```
+   ```go
+   // ❌ Bad - from payment_service.go:115-154
+   fmt.Println("cek", 1)
+   fmt.Println("cek", 2)
+   // ... scattered throughout
+   ```
 
 4. **Inconsistent error context**:
 
-```go
-// ❌ Bad
-return nil, errors.New("failed to fetch products")
+   ```go
+   // ❌ Bad
+   return nil, errors.New("failed to fetch products")
 
-// ✅ Good
-return nil, fmt.Errorf("failed to fetch products: %w", err)
-```
+   // ✅ Good
+   return nil, fmt.Errorf("failed to fetch products: %w", err)
+   ```
 
 **Recommendations**:
 
 1. **Implement structured logging**:
 
-```go
-import "log/slog"
+   ```go
+   import "log/slog"
 
-logger.Error("rollback failed",
-    slog.String("order_id", orderID.String()),
-    slog.String("error", rollbackErr.Error()),
-)
-```
+   logger.Error("rollback failed",
+       slog.String("order_id", orderID.String()),
+       slog.String("error", rollbackErr.Error()),
+   )
+   ```
 
 2. **Return errors instead of logging**:
 
-```go
-// Let caller decide how to handle
-if err != nil {
-    return fmt.Errorf("failed to update order status: %w", err)
-}
-```
+   ```go
+   // Let caller decide how to handle
+   if err != nil {
+       return fmt.Errorf("failed to update order status: %w", err)
+   }
+   ```
 
 3. **Remove debug prints** - Use proper logging levels instead.
 
@@ -252,29 +252,29 @@ if err != nil {
 
 1. **Missing payment success callback**:
 
-```go
-// TODO from README.md:
-// - TODO send callback from payment service
-// - TODO add background worker to limit payment waiting time
-```
+   ```go
+   // TODO from README.md:
+   // - TODO send callback from payment service
+   // - TODO add background worker to limit payment waiting time
+   ```
 
-Currently, payment is created with `WAITING` status but there's no mechanism to:
+   Currently, payment is created with `WAITING` status but there's no mechanism to:
 
-- Confirm payment success
-- Timeout expired payments
-- Notify order service of payment completion
+   - Confirm payment success
+   - Timeout expired payments
+   - Notify order service of payment completion
 
 2. **No compensation retry logic**:
 
-```go
-// From order_service.go:314-318
-_, err = s.warehouseServiceClient.ReserveStock(ctx, req)
-if err != nil {
-    rollbackErr := rollback()
-    // ❌ No retry mechanism if rollback fails
-    return nil, fmt.Errorf("failed to reserve stock: %w", err)
-}
-```
+   ```go
+   // From order_service.go:314-318
+   _, err = s.warehouseServiceClient.ReserveStock(ctx, req)
+   if err != nil {
+       rollbackErr := rollback()
+       // ❌ No retry mechanism if rollback fails
+       return nil, fmt.Errorf("failed to reserve stock: %w", err)
+   }
+   ```
 
 **Recommendations**:
 
@@ -336,17 +336,17 @@ AllowedOrigins: []string{"*"},
 
 1. **Implement RBAC**:
 
-```go
-type UserRole string
-const (
-    RoleAdmin    UserRole = "admin"
-    RoleCustomer UserRole = "customer"
-)
+   ```go
+   type UserRole string
+   const (
+       RoleAdmin    UserRole = "admin"
+       RoleCustomer UserRole = "customer"
+   )
 
-func (m *AuthMiddleware) RequireRole(role UserRole) func(http.Handler) http.Handler {
-    // Check user role from JWT claims
-}
-```
+   func (m *AuthMiddleware) RequireRole(role UserRole) func(http.Handler) http.Handler {
+       // Check user role from JWT claims
+   }
+   ```
 
 2. **Restrict CORS** to specific domains in production.
 3. **Add rate limiting** (e.g., using `golang.org/x/time/rate`).
@@ -361,22 +361,22 @@ func (m *AuthMiddleware) RequireRole(role UserRole) func(http.Handler) http.Hand
 
 1. **Timestamps not in UTC**:
 
-```go
-// TODO from README.md:
-// - TODO save time in UTC format in the database
-```
+   ```go
+   // TODO from README.md:
+   // - TODO save time in UTC format in the database
+   ```
 
 2. **No connection pooling configuration** in most services.
 
 3. **Potential N+1 queries**:
 
-```go
-// order_service.go:228-234
-// Fetches all products in one call ✅
-products, err := s.productServiceClient.GetProducts(ctx, &gen.GetProductsRequest{
-    Ids: cart.GetProductIDs(),
-})
-```
+   ```go
+   // order_service.go:228-234
+   // Fetches all products in one call ✅
+   products, err := s.productServiceClient.GetProducts(ctx, &gen.GetProductsRequest{
+       Ids: cart.GetProductIDs(),
+   })
+   ```
 
 This is actually well-done, but ensure similar patterns throughout.
 
@@ -384,15 +384,19 @@ This is actually well-done, but ensure similar patterns throughout.
 
 1. **Use UTC everywhere**:
 
-```go
-time.Now().UTC()
-```
+   ```go
+   time.Now().UTC()
+   ```
+
+   ```go
+   dbsql.WithDBConnectionPool(25, 5, 5*time.Minute)
+   ```
 
 2. **Configure connection pools**:
 
-```go
-dbsql.WithDBConnectionPool(25, 5, 5*time.Minute)
-```
+   ```go
+   dbsql.WithDBConnectionPool(25, 5, 5*time.Minute)
+   ```
 
 ---
 

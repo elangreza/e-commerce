@@ -36,6 +36,7 @@ func main() {
 	var cfg Config
 	err := config.LoadConfig(&cfg)
 	errChecker(err)
+	fmt.Printf("cfg %+v\n", cfg)
 
 	// Default to data-local for local development
 	dbPath := cfg.DBPath

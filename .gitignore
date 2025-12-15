@@ -16,3 +16,4 @@ go.work.sum
 
 # Local development databases
 */data-local/
+*/data/

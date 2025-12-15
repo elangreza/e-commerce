@@ -30,16 +30,19 @@ type (
 type paymentService struct {
 	paymentRepo        paymentRepo
 	maxTimeToBeExpired time.Duration
+	orderService       gen.OrderServiceClient
 	gen.UnimplementedPaymentServiceServer
 }
 
 func NewPaymentService(
 	paymentRepo paymentRepo,
 	maxTimeToBeExpired time.Duration,
+	orderService gen.OrderServiceClient,
 ) *paymentService {
 	return &paymentService{
 		paymentRepo:        paymentRepo,
 		maxTimeToBeExpired: maxTimeToBeExpired,
+		orderService:       orderService,
 	}
 }
 
@@ -113,12 +116,10 @@ func (p *paymentService) GetPayment(ctx context.Context, req *gen.GetPaymentRequ
 func (p *paymentService) UpdatePayment(ctx context.Context, req *gen.UpdatePaymentRequest) (*gen.UpdatePaymentResponse, error) {
 	payment, err := p.paymentRepo.GetPaymentByTransactionID(ctx, req.TransactionId)
 	if err != nil {
-		fmt.Println("cek", 1)
 		return nil, err
 	}
 
 	if payment.Status != constanta.WAITING {
-		fmt.Println("cek", 2)
 		return &gen.UpdatePaymentResponse{
 			Status: string(payment.Status),
 		}, nil
@@ -127,10 +128,17 @@ func (p *paymentService) UpdatePayment(ctx context.Context, req *gen.UpdatePayme
 	if req.TotalAmount.Units > payment.TotalAmount.Units || req.TotalAmount.Units < payment.TotalAmount.Units {
 		err = p.paymentRepo.UpdatePaymentStatusByTransactionID(ctx, constanta.FAILED, req.TransactionId)
 		if err != nil {
-			fmt.Println("cek", 3)
 			return nil, err
 		}
-		fmt.Println("cek", 4)
+
+		_, err = p.orderService.CallbackTransaction(ctx, &gen.CallbackTransactionRequest{
+			TransactionId: req.TransactionId,
+			PaymentStatus: constanta.FAILED.String(),
+		})
+		if err != nil {
+			return nil, err
+		}
+
 		return &gen.UpdatePaymentResponse{
 			Status: string(constanta.FAILED),
 		}, nil
@@ -139,16 +147,22 @@ func (p *paymentService) UpdatePayment(ctx context.Context, req *gen.UpdatePayme
 	if req.TotalAmount.Units == payment.TotalAmount.Units {
 		err = p.paymentRepo.UpdatePaymentStatusByTransactionID(ctx, constanta.PAID, req.TransactionId)
 		if err != nil {
-			fmt.Println("cek", 5)
 			return nil, err
 		}
-		fmt.Println("cek", 6)
+
+		_, err = p.orderService.CallbackTransaction(ctx, &gen.CallbackTransactionRequest{
+			TransactionId: req.TransactionId,
+			PaymentStatus: constanta.PAID.String(),
+		})
+		if err != nil {
+			return nil, err
+		}
+
 		return &gen.UpdatePaymentResponse{
 			Status: string(constanta.PAID),
 		}, nil
 	}
 
-	fmt.Println("cek", 7)
 	return &gen.UpdatePaymentResponse{
 		Status: "UNKNOWN",
 	}, nil
@@ -167,6 +181,14 @@ func (p *paymentService) RemoveExpiryPayment(ctx context.Context, duration time.
 		err = p.paymentRepo.UpdatePaymentStatusByTransactionID(ctx, constanta.FAILED, payment.TransactionID)
 		if err != nil {
 			fmt.Println("err when Update status", err)
+		}
+
+		_, err = p.orderService.CallbackTransaction(ctx, &gen.CallbackTransactionRequest{
+			TransactionId: payment.TransactionID,
+			PaymentStatus: constanta.FAILED.String(),
+		})
+		if err != nil {
+			fmt.Println("err when callback transaction", err)
 		}
 	}
 

@@ -257,3 +257,18 @@ func (r *OrderRepository) UpdateOrderStatusWithCallback(ctx context.Context, sta
 	}
 	return nil
 }
+
+func (r *OrderRepository) GetOrderByTransactionID(ctx context.Context, transactionID string) (*entity.Order, error) {
+	q := `SELECT id, status FROM orders WHERE transaction_id = ?;`
+
+	var ord entity.Order
+	err := r.db.QueryRowContext(ctx, q, transactionID).Scan(
+		&ord.ID,
+		&ord.Status,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ord, nil
+}

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -151,6 +152,7 @@ func (h *handler) detailPost(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
+		fmt.Println("err when update payment", err)
 		// Re-render with error
 		total, _ := money.ToMajorString(payment.TotalAmount)
 		data := PageData{

@@ -8,14 +8,10 @@ import (
 type PaymentStatus string
 
 const (
-	// waiting payment to be done
-	WAITING PaymentStatus = "WAITING"
 	// successfully paid
 	PAID PaymentStatus = "PAID"
-	// if payment amount is less or more the actual amount
+	// if payment amount is less or more the actual amount or payment expired
 	FAILED PaymentStatus = "FAILED"
-	// if payment is expired or being cancelled directly by service
-	CANCELLED PaymentStatus = "CANCELLED"
 )
 
 // Implement driver.Valuer interface for writing to database
@@ -46,14 +42,10 @@ func (ps *PaymentStatus) Scan(value interface{}) error {
 
 func (ps PaymentStatus) String() string {
 	switch ps {
-	case WAITING:
-		return "WAITING"
 	case PAID:
 		return "PAID"
 	case FAILED:
 		return "FAILED"
-	case CANCELLED:
-		return "CANCELLED"
 	default:
 		return "UNKNOWN"
 	}

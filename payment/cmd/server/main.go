@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/elangreza/e-commerce/gen"
 	"github.com/elangreza/e-commerce/payment/internal/handler"
 	"github.com/elangreza/e-commerce/payment/internal/server"
 	"github.com/elangreza/e-commerce/payment/internal/service"
@@ -19,6 +20,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -27,12 +30,14 @@ type Config struct {
 	ServicePort        string        `koanf:"SERVICE_PORT"`
 	DBPath             string        `koanf:"DB_PATH"`
 	MaxTimeToBeExpired time.Duration `koanf:"MAX_TIME_TO_BE_EXPIRED"`
+	OrderServiceAddr   string        `koanf:"ORDER_SERVICE_ADDR"`
 }
 
 func main() {
 	var cfg Config
 	err := config.LoadConfig(&cfg)
 	errChecker(err)
+	fmt.Printf("cfg %+v\n", cfg)
 
 	// Default to data-local for local development
 	dbPath := cfg.DBPath
@@ -50,8 +55,12 @@ func main() {
 	)
 	errChecker(err)
 
+	// order client
+	grpcClientOrder, err := grpc.NewClient(cfg.OrderServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	errChecker(err)
+
 	paymentRepo := sqlitedb.NewPaymentRepository(db)
-	paymentService := service.NewPaymentService(paymentRepo, cfg.MaxTimeToBeExpired)
+	paymentService := service.NewPaymentService(paymentRepo, cfg.MaxTimeToBeExpired, gen.NewOrderServiceClient(grpcClientOrder))
 	srv := server.New(paymentService)
 
 	addr := fmt.Sprintf(":%s", cfg.ServicePort)

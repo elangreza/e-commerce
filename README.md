@@ -8,10 +8,6 @@ Built with the **Saga orchestration pattern and a central orchestrator**. The or
 
 ### HIGH PRIORITY TASKS
 
-- TODO ADD flow order success
-
-  - TODO send callback from payment service
-
 - TODO ADD order details in order service
   - TODO ADD product details in product service
   - TODO ADD product details in BFF / API service
