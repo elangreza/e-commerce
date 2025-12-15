@@ -98,10 +98,9 @@ func (r *OrderRepository) GetOrderByIdempotencyKey(ctx context.Context, idempote
 	status, 
 	total_amount, 
 	currency, 
+	transaction_id,
 	created_at, 
-	updated_at, 
-	shipped_at, 
-	cancelled_at FROM orders WHERE idempotency_key = ?;`
+	updated_at FROM orders WHERE idempotency_key = ?;`
 
 	var totalAmount int64
 	var currencyCode string
@@ -113,10 +112,9 @@ func (r *OrderRepository) GetOrderByIdempotencyKey(ctx context.Context, idempote
 		&ord.Status,
 		&totalAmount,
 		&currencyCode,
+		&ord.TransactionID,
 		&ord.CreatedAt,
 		&ord.UpdatedAt,
-		&ord.ShippedAt,
-		&ord.CancelledAt,
 	)
 	if err != nil {
 		return nil, err
@@ -184,7 +182,6 @@ func (r *OrderRepository) UpdateOrder(ctx context.Context, payloads map[string]a
 	fields := map[string]struct{}{
 		"transaction_id": {},
 		"status":         {},
-		"cancelled_at":   {},
 	}
 	args := []any{}
 	for key, payload := range payloads {
@@ -271,4 +268,153 @@ func (r *OrderRepository) GetOrderByTransactionID(ctx context.Context, transacti
 	}
 
 	return &ord, nil
+}
+
+func (r *OrderRepository) GetOrderByID(ctx context.Context, orderID uuid.UUID) (*entity.Order, error) {
+	q := `SELECT id, 
+	idempotency_key, 
+	user_id, 
+	status, 
+	total_amount, 
+	currency, 
+	transaction_id, 
+	created_at,
+	updated_at FROM orders WHERE id = ?;`
+
+	var totalAmount int64
+	var currencyCode string
+	var ord entity.Order
+	err := r.db.QueryRowContext(ctx, q, orderID).Scan(
+		&ord.IdempotencyKey,
+		&ord.ID,
+		&ord.UserID,
+		&ord.Status,
+		&totalAmount,
+		&currencyCode,
+		&ord.TransactionID,
+		&ord.CreatedAt,
+		&ord.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	ord.TotalAmount, err = money.New(totalAmount, currencyCode)
+	if err != nil {
+		return nil, err
+	}
+
+	qItems := `SELECT 
+	id, 
+	order_id, 
+	product_id, 
+	name, 
+	price_per_unit_units, 
+	currency, 
+	quantity, 
+	total_price_units
+	FROM order_items WHERE order_id = ?;`
+
+	rows, err := r.db.QueryContext(ctx, qItems, ord.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var orderItem entity.OrderItem
+		var pricePerUnit int64
+		var totalPricePerUnit int64
+		var currencyCode string
+		err = rows.Scan(
+			&orderItem.ID,
+			&orderItem.OrderID,
+			&orderItem.ProductID,
+			&orderItem.Name,
+			&pricePerUnit,
+			&currencyCode,
+			&orderItem.Quantity,
+			&totalPricePerUnit,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		orderItem.PricePerUnit, err = money.New(pricePerUnit, currencyCode)
+		if err != nil {
+			return nil, err
+		}
+
+		orderItem.TotalPricePerUnit, err = money.New(totalPricePerUnit, currencyCode)
+		if err != nil {
+			return nil, err
+		}
+
+		ord.Items = append(ord.Items, orderItem)
+	}
+
+	return &ord, nil
+}
+
+func (r *OrderRepository) GetOrderList(ctx context.Context, req entity.GetOrderListRequest) ([]entity.Order, error) {
+	q := `SELECT id, 
+	idempotency_key, 
+	user_id, 
+	status, 
+	total_amount, 
+	currency, 
+	transaction_id,
+	created_at, 
+	updated_at FROM orders WHERE user_id = ?;`
+
+	if req.IsFilterByDate {
+		q += " AND created_at BETWEEN ? AND ?;"
+	}
+
+	if req.IsFilterByStatus {
+		q += " AND status = ?;"
+	}
+
+	args := []any{req.UserID}
+	if req.IsFilterByDate {
+		args = append(args, req.StartDate, req.EndDate)
+	}
+	if req.IsFilterByStatus {
+		args = append(args, req.Status)
+	}
+
+	rows, err := r.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	orders := []entity.Order{}
+	for rows.Next() {
+		var order entity.Order
+		var totalAmount int64
+		var currencyCode string
+		err := rows.Scan(
+			&order.IdempotencyKey,
+			&order.ID,
+			&order.UserID,
+			&order.Status,
+			&totalAmount,
+			&currencyCode,
+			&order.TransactionID,
+			&order.CreatedAt,
+			&order.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		order.TotalAmount, err = money.New(totalAmount, currencyCode)
+		if err != nil {
+			return nil, err
+		}
+
+		orders = append(orders, order)
+	}
+
+	return orders, nil
 }

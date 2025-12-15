@@ -36,6 +36,8 @@ type (
 		GetExpiryOrders(ctx context.Context, duration time.Duration) ([]entity.Order, error)
 		UpdateOrderStatusWithCallback(ctx context.Context, status constanta.OrderStatus, orderID uuid.UUID, callback func() error) error
 		GetOrderByTransactionID(ctx context.Context, transactionID string) (*entity.Order, error)
+		GetOrderByID(ctx context.Context, orderID uuid.UUID) (*entity.Order, error)
+		GetOrderList(ctx context.Context, req entity.GetOrderListRequest) ([]entity.Order, error)
 	}
 )
 
@@ -447,4 +449,94 @@ func (s *orderService) CallbackTransaction(ctx context.Context, req *gen.Callbac
 func AppendUserIDintoContextGrpcClient(ctx context.Context, userID uuid.UUID) context.Context {
 	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
 	return metadata.NewOutgoingContext(ctx, md)
+}
+
+func (s *orderService) GetOrder(ctx context.Context, req *gen.GetOrderRequest) (*gen.Order, error) {
+	userID, err := extractor.ExtractUserIDFromMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := uuid.Parse(req.Id)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid order id")
+	}
+
+	order, err := s.orderRepo.GetOrderByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "order not found")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get order: %v", err)
+	}
+
+	if order.UserID != userID {
+		return nil, status.Errorf(codes.PermissionDenied, "you are not authorized to access this order")
+	}
+
+	return order.GetGenOrder(), nil
+}
+
+func (s *orderService) GetOrderList(ctx context.Context, req *gen.GetOrderListRequest) (*gen.Orders, error) {
+	userID, err := extractor.ExtractUserIDFromMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var isFilterByStatus bool
+	var reqStatus constanta.OrderStatus
+	if req.Status != "" {
+		err = reqStatus.Scan(req.Status)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "status not valid")
+		}
+
+		if reqStatus.String() == "UNKNOWN" {
+			return nil, status.Errorf(codes.InvalidArgument, "status not valid")
+		}
+
+		isFilterByStatus = true
+	}
+
+	var isFilterByDate bool
+	var startDate time.Time
+	var endDate time.Time
+	if req.StartDate != "" && req.EndDate != "" {
+		startDate, err = time.Parse(time.DateOnly, req.StartDate)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "start_date not valid")
+		}
+
+		endDate, err = time.Parse(time.DateOnly, req.EndDate)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "end_date not valid")
+		}
+
+		if startDate.After(endDate) {
+			return nil, status.Errorf(codes.InvalidArgument, "start_date must be before end_date")
+		}
+
+		isFilterByDate = true
+	}
+
+	orderList, err := s.orderRepo.GetOrderList(ctx, entity.GetOrderListRequest{
+		UserID:           userID,
+		IsFilterByDate:   isFilterByDate,
+		StartDate:        startDate,
+		EndDate:          endDate,
+		IsFilterByStatus: isFilterByStatus,
+		Status:           reqStatus,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	orders := []*gen.Order{}
+	for _, order := range orderList {
+		orders = append(orders, order.GetGenOrder())
+	}
+
+	return &gen.Orders{
+		Orders: orders,
+	}, nil
 }

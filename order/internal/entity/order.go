@@ -15,11 +15,9 @@ type Order struct {
 	Status         constanta.OrderStatus `json:"status" db:"status"`
 	TotalAmount    *gen.Money            `json:"total_amount" db:"total_amount"`
 	// TransactionID is available after payment is processed, and successfully created
-	TransactionID string     `json:"transaction_id" db:"transaction_id"`
-	CreatedAt     time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at" db:"updated_at"`
-	ShippedAt     *time.Time `json:"shipped_at,omitempty" db:"shipped_at"`
-	CancelledAt   *time.Time `json:"cancelled_at,omitempty" db:"cancelled_at"`
+	TransactionID string    `json:"transaction_id" db:"transaction_id"`
+	CreatedAt     time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
 
 	Items []OrderItem
 }
@@ -53,4 +51,13 @@ func (ord *Order) GetGenOrder() *gen.Order {
 		IdempotencyKey: ord.IdempotencyKey.String(),
 		TransactionId:  ord.TransactionID,
 	}
+}
+
+type GetOrderListRequest struct {
+	UserID           uuid.UUID             `json:"user_id"`
+	IsFilterByDate   bool                  `json:"is_filter_by_date"`
+	StartDate        time.Time             `json:"start_date"`
+	EndDate          time.Time             `json:"end_date"`
+	IsFilterByStatus bool                  `json:"is_filter_by_status"`
+	Status           constanta.OrderStatus `json:"status"`
 }

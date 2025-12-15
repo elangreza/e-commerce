@@ -7,7 +7,6 @@ import (
 
 type OrderStatus string
 
-// 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'failed'
 const (
 	OrderStatusPending       OrderStatus = "PENDING"
 	OrderStatusStockReserved OrderStatus = "STOCK_RESERVED"
@@ -18,7 +17,20 @@ const (
 
 // return string
 func (ps OrderStatus) String() string {
-	return string(ps)
+	switch ps {
+	case OrderStatusPending:
+		return "PENDING"
+	case OrderStatusStockReserved:
+		return "STOCK_RESERVED"
+	case OrderStatusCompleted:
+		return "COMPLETED"
+	case OrderStatusCancelled:
+		return "CANCELLED"
+	case OrderStatusFailed:
+		return "FAILED"
+	default:
+		return "UNKNOWN"
+	}
 }
 
 // Implement driver.Valuer interface for writing to database

@@ -55,6 +55,20 @@ message CallbackTransactionRequest {
   string payment_status = 2;
 }
 
+message GetOrderRequest {
+  string id = 1;
+}
+
+message Orders {
+  repeated Order orders = 1;
+}
+
+message GetOrderListRequest {
+  string start_date = 1;
+  string end_date = 2;
+  string status = 3;
+}
+
 // this service contains all the methods related to checkout and order management
 // this require user_id from context metadata
 // all user must be authenticated to access this service
@@ -66,4 +80,6 @@ service OrderService {
     rpc GetCart(Empty) returns (Cart) {}
     rpc CreateOrder(CreateOrderRequest) returns (Order) {}
     rpc CallbackTransaction(CallbackTransactionRequest) returns (Empty) {}
+    rpc GetOrder(GetOrderRequest) returns (Order) {}
+    rpc GetOrderList(GetOrderListRequest) returns (Orders) {}
 }
