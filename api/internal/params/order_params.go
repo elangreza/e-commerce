@@ -46,11 +46,11 @@ type (
 		PricePerUnit *Money `json:"price_per_unit"`
 	}
 
-	CreateOrderResponse struct {
+	OrderResponse struct {
 		OrderID       string                 `json:"order_id"`
 		TotalAmount   *Money                 `json:"total_amount"`
 		Status        string                 `json:"status"`
-		Items         []GetCartItemsResponse `json:"items"`
+		Items         []GetCartItemsResponse `json:"items,omitempty"`
 		TransactionID string                 `json:"transaction_id"`
 	}
 )
@@ -67,3 +67,15 @@ func (a *CreateOrderRequest) Validate() error {
 
 	return nil
 }
+
+type (
+	GetOrderListRequest struct {
+		StartDate string `json:"start_date"`
+		EndDate   string `json:"end_date"`
+		Status    string `json:"status"`
+	}
+
+	GetOrderListResponse struct {
+		OrderList []OrderResponse `json:"order_list"`
+	}
+)

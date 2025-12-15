@@ -14,7 +14,9 @@ type (
 	OrderService interface {
 		AddProductToCart(ctx context.Context, req params.AddToCartRequest) error
 		GetCart(ctx context.Context) (*params.GetCartResponse, error)
-		CreateOrder(ctx context.Context, req params.CreateOrderRequest) (*params.CreateOrderResponse, error)
+		CreateOrder(ctx context.Context, req params.CreateOrderRequest) (*params.OrderResponse, error)
+		GetOrderList(ctx context.Context, req params.GetOrderListRequest) (*params.GetOrderListResponse, error)
+		GetOrderDetail(ctx context.Context, orderID string) (*params.OrderResponse, error)
 	}
 
 	orderHandler struct {
@@ -38,9 +40,11 @@ func NewOrderHandler(
 
 	publicRoute.Group(func(r chi.Router) {
 		r.Use(authMiddleware.MustAuthMiddleware())
-		r.Post("/order", oh.CreateOrder())
 		r.Post("/cart", oh.AddProductToCart())
 		r.Get("/cart", oh.GetCart())
+		r.Post("/orders", oh.CreateOrder())
+		r.Get("/orders", oh.GetOrderList())
+		r.Get("/orders/{order_id}", oh.GetOrderDetail())
 	})
 }
 
@@ -105,5 +109,38 @@ func (oh *orderHandler) CreateOrder() http.HandlerFunc {
 		}
 
 		sendSuccessResponse(w, http.StatusCreated, order)
+	}
+}
+
+func (oh *orderHandler) GetOrderList() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body := params.GetOrderListRequest{
+			StartDate: r.URL.Query().Get("start_date"),
+			EndDate:   r.URL.Query().Get("end_date"),
+			Status:    r.URL.Query().Get("status"),
+		}
+
+		ctx := r.Context()
+
+		order, err := oh.svc.GetOrderList(ctx, body)
+		if err != nil {
+			sendErrorResponse(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		sendSuccessResponse(w, http.StatusOK, order)
+	}
+}
+
+func (oh *orderHandler) GetOrderDetail() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		order, err := oh.svc.GetOrderDetail(ctx, chi.URLParam(r, "order_id"))
+		if err != nil {
+			sendErrorResponse(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		sendSuccessResponse(w, http.StatusOK, order)
 	}
 }

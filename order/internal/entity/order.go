@@ -15,9 +15,9 @@ type Order struct {
 	Status         constanta.OrderStatus `json:"status" db:"status"`
 	TotalAmount    *gen.Money            `json:"total_amount" db:"total_amount"`
 	// TransactionID is available after payment is processed, and successfully created
-	TransactionID string    `json:"transaction_id" db:"transaction_id"`
-	CreatedAt     time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
+	TransactionID string     `json:"transaction_id" db:"transaction_id"`
+	CreatedAt     *time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt     *time.Time `json:"updated_at" db:"updated_at"`
 
 	Items []OrderItem
 }

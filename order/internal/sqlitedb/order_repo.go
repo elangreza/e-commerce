@@ -106,8 +106,8 @@ func (r *OrderRepository) GetOrderByIdempotencyKey(ctx context.Context, idempote
 	var currencyCode string
 	var ord entity.Order
 	err := r.db.QueryRowContext(ctx, q, idempotencyKey).Scan(
-		&ord.IdempotencyKey,
 		&ord.ID,
+		&ord.IdempotencyKey,
 		&ord.UserID,
 		&ord.Status,
 		&totalAmount,
@@ -285,8 +285,8 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, orderID uuid.UUID) (
 	var currencyCode string
 	var ord entity.Order
 	err := r.db.QueryRowContext(ctx, q, orderID).Scan(
-		&ord.IdempotencyKey,
 		&ord.ID,
+		&ord.IdempotencyKey,
 		&ord.UserID,
 		&ord.Status,
 		&totalAmount,
@@ -364,15 +364,17 @@ func (r *OrderRepository) GetOrderList(ctx context.Context, req entity.GetOrderL
 	currency, 
 	transaction_id,
 	created_at, 
-	updated_at FROM orders WHERE user_id = ?;`
+	updated_at FROM orders WHERE user_id = ?`
 
 	if req.IsFilterByDate {
-		q += " AND created_at BETWEEN ? AND ?;"
+		q += " AND created_at BETWEEN ? AND ?"
 	}
 
 	if req.IsFilterByStatus {
-		q += " AND status = ?;"
+		q += " AND status = ?"
 	}
+
+	q += ";"
 
 	args := []any{req.UserID}
 	if req.IsFilterByDate {
@@ -394,8 +396,8 @@ func (r *OrderRepository) GetOrderList(ctx context.Context, req entity.GetOrderL
 		var totalAmount int64
 		var currencyCode string
 		err := rows.Scan(
-			&order.IdempotencyKey,
 			&order.ID,
+			&order.IdempotencyKey,
 			&order.UserID,
 			&order.Status,
 			&totalAmount,

@@ -77,7 +77,7 @@ func (s *orderService) GetCart(ctx context.Context) (*params.GetCartResponse, er
 	return res, nil
 }
 
-func (s *orderService) CreateOrder(ctx context.Context, req params.CreateOrderRequest) (*params.CreateOrderResponse, error) {
+func (s *orderService) CreateOrder(ctx context.Context, req params.CreateOrderRequest) (*params.OrderResponse, error) {
 
 	userID, ok := ctx.Value(constanta.LocalUserID).(uuid.UUID)
 	if !ok {
@@ -95,7 +95,84 @@ func (s *orderService) CreateOrder(ctx context.Context, req params.CreateOrderRe
 		return nil, convertErrGrpc(err)
 	}
 
-	res := &params.CreateOrderResponse{
+	res := &params.OrderResponse{
+		OrderID: order.GetId(),
+		Items:   []params.GetCartItemsResponse{},
+		TotalAmount: &params.Money{
+			Units:        order.GetTotalAmount().GetUnits(),
+			CurrencyCode: order.GetTotalAmount().GetCurrencyCode(),
+		},
+		Status:        order.GetStatus(),
+		TransactionID: order.GetTransactionId(),
+	}
+
+	for _, item := range order.Items {
+		res.Items = append(res.Items, params.GetCartItemsResponse{
+			ProductID: item.GetProductId(),
+			Quantity:  item.GetQuantity(),
+		})
+	}
+
+	return res, nil
+}
+
+func (s *orderService) GetOrderList(ctx context.Context, req params.GetOrderListRequest) (*params.GetOrderListResponse, error) {
+	userID, ok := ctx.Value(constanta.LocalUserID).(uuid.UUID)
+	if !ok {
+		return nil, errors.New("error when parsing userID")
+	}
+
+	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
+	newCtx := metadata.NewOutgoingContext(context.Background(), md)
+
+	list, err := s.orderServiceClient.GetOrderList(newCtx, &gen.GetOrderListRequest{
+		StartDate: req.StartDate,
+		EndDate:   req.EndDate,
+		Status:    req.Status,
+	})
+
+	if err != nil {
+		return nil, convertErrGrpc(err)
+	}
+
+	res := &params.GetOrderListResponse{
+		OrderList: []params.OrderResponse{},
+	}
+
+	for _, item := range list.GetOrders() {
+		res.OrderList = append(res.OrderList, params.OrderResponse{
+			OrderID: item.GetId(),
+			TotalAmount: &params.Money{
+				Units:        item.GetTotalAmount().GetUnits(),
+				CurrencyCode: item.GetTotalAmount().GetCurrencyCode(),
+			},
+			Status:        item.GetStatus(),
+			TransactionID: item.GetTransactionId(),
+			Items:         nil,
+		})
+	}
+
+	return res, nil
+}
+
+func (s *orderService) GetOrderDetail(ctx context.Context, orderID string) (*params.OrderResponse, error) {
+	userID, ok := ctx.Value(constanta.LocalUserID).(uuid.UUID)
+	if !ok {
+		return nil, errors.New("error when parsing userID")
+	}
+
+	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
+	newCtx := metadata.NewOutgoingContext(context.Background(), md)
+
+	order, err := s.orderServiceClient.GetOrder(newCtx, &gen.GetOrderRequest{
+		Id: orderID,
+	})
+
+	if err != nil {
+		return nil, convertErrGrpc(err)
+	}
+
+	res := &params.OrderResponse{
 		OrderID: order.GetId(),
 		Items:   []params.GetCartItemsResponse{},
 		TotalAmount: &params.Money{

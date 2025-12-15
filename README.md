@@ -8,9 +8,6 @@ Built with the **Saga orchestration pattern and a central orchestrator**. The or
 
 ### HIGH PRIORITY TASKS
 
-- TODO ADD order details in order service
-  - TODO ADD product details in product service
-  - TODO ADD product details in BFF / API service
 - TODO API get product with shop is active or not
 - TODO Add unit tests. High priority. Confidence to ship faster
 - TODO Make sure the mocked payment service can be accessed via HTTP / own UI

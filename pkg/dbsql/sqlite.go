@@ -29,7 +29,7 @@ func WithSqliteDBWalMode() Option {
 		if c.DriverName != "sqlite3" {
 			return fmt.Errorf("driver is not sqlite3")
 		}
-		c.DataSourceName = fmt.Sprintf("%s?_journal_mode=WAL", c.DataSourceName)
+		c.DataSourceName = fmt.Sprintf("%s?_journal_mode=WAL&_parseTime=true", c.DataSourceName)
 		return nil
 	}
 }
