@@ -54,7 +54,7 @@ func (c *Cart) GetGenCart() *gen.Cart {
 		res.Items = append(res.Items, &gen.CartItem{
 			ProductId:   items.ProductID,
 			Quantity:    items.Quantity,
-			Name:        items.ProductID,
+			Name:        items.Name,
 			Price:       items.Price,
 			ActualStock: items.ActualStock,
 		})

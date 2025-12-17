@@ -20,7 +20,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-//go:generate mockgen -source=product_service.go -destination=./mock/mock_product_service.go -package=mock
+//go:generate mockgen -source=order_service.go -destination=mock/mock_order_service.go -package=mock
+//go:generate mockgen -package=mock -destination=mock/mock_deps.go github.com/elangreza/e-commerce/gen WarehouseServiceClient,PaymentServiceClient,ProductServiceClient
 
 type (
 	cartRepo interface {
@@ -41,7 +42,7 @@ type (
 	}
 )
 
-type orderService struct {
+type OrderService struct {
 	orderRepo              orderRepo
 	cartRepo               cartRepo
 	warehouseServiceClient gen.WarehouseServiceClient
@@ -56,8 +57,8 @@ func NewOrderService(
 	warehouseServiceClient gen.WarehouseServiceClient,
 	productServiceClient gen.ProductServiceClient,
 	paymentServiceClient gen.PaymentServiceClient,
-) *orderService {
-	return &orderService{
+) *OrderService {
+	return &OrderService{
 		orderRepo:              orderRepo,
 		cartRepo:               cartRepo,
 		warehouseServiceClient: warehouseServiceClient,
@@ -66,7 +67,7 @@ func NewOrderService(
 	}
 }
 
-func (s *orderService) AddProductToCart(ctx context.Context, req *gen.AddCartItemRequest) (*gen.Empty, error) {
+func (s *OrderService) AddProductToCart(ctx context.Context, req *gen.AddCartItemRequest) (*gen.Empty, error) {
 	userID, err := extractor.ExtractUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -131,7 +132,7 @@ func (s *orderService) AddProductToCart(ctx context.Context, req *gen.AddCartIte
 	return &gen.Empty{}, nil
 }
 
-func (s *orderService) GetCart(ctx context.Context, req *gen.Empty) (*gen.Cart, error) {
+func (s *OrderService) GetCart(ctx context.Context, req *gen.Empty) (*gen.Cart, error) {
 	userID, err := extractor.ExtractUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -143,22 +144,6 @@ func (s *orderService) GetCart(ctx context.Context, req *gen.Empty) (*gen.Cart, 
 			return nil, status.Errorf(codes.NotFound, "cart not found")
 		}
 		return nil, err
-	}
-
-	if cart == nil {
-		err = s.cartRepo.CreateCart(ctx, entity.Cart{
-			ID:     uuid.Must(uuid.NewV7()),
-			UserID: userID,
-			Items:  []entity.CartItem{},
-		})
-		if err != nil {
-			return nil, err
-		}
-		return cart.GetGenCart(), nil
-	}
-
-	if len(cart.Items) == 0 {
-		return cart.GetGenCart(), nil
 	}
 
 	productIDs := make([]string, 0, len(cart.Items))
@@ -189,7 +174,7 @@ func (s *orderService) GetCart(ctx context.Context, req *gen.Empty) (*gen.Cart, 
 	return cart.GetGenCart(), nil
 }
 
-func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequest) (*gen.Order, error) {
+func (s *OrderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequest) (*gen.Order, error) {
 	idempotencyKey, err := uuid.Parse(req.IdempotencyKey)
 	if err != nil {
 		return nil, errors.New("invalid idempotency_key format")
@@ -300,8 +285,6 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 
 	ctx = AppendUserIDintoContextGrpcClient(ctx, userID)
 
-	// Reserve stock
-
 	stocks := []*gen.Stock{}
 	for _, item := range cart.Items {
 		stocks = append(stocks, &gen.Stock{
@@ -309,6 +292,8 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 			Quantity:  item.Quantity,
 		})
 	}
+
+	// Reserve stock
 	_, err = s.warehouseServiceClient.ReserveStock(ctx, &gen.ReserveStockRequest{
 		OrderId: orderID.String(),
 		Stocks:  stocks,
@@ -365,7 +350,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 	return order.GetGenOrder(), nil
 }
 
-func (s *orderService) RemoveExpiryOrder(ctx context.Context, duration time.Duration) (int, error) {
+func (s *OrderService) RemoveExpiryOrder(ctx context.Context, duration time.Duration) (int, error) {
 	orders, err := s.orderRepo.GetExpiryOrders(ctx, duration)
 	if err != nil {
 		return 0, err
@@ -374,6 +359,11 @@ func (s *orderService) RemoveExpiryOrder(ctx context.Context, duration time.Dura
 	for _, order := range orders {
 
 		if order.Status == constanta.OrderStatusPending {
+			// TODO must be retry flow, process the cause of pending order
+			// if the cause is stock reservation failed, then release stock
+			// if the cause is payment failed, then update status to failed
+			// if the cause is repository is failed, then update status to failed
+			// if the cause is unknown, then update status to failed
 			err = s.orderRepo.UpdateOrder(ctx, map[string]any{
 				"status": constanta.OrderStatusFailed,
 			}, order.ID)
@@ -406,7 +396,7 @@ func (s *orderService) RemoveExpiryOrder(ctx context.Context, duration time.Dura
 	return len(orders), nil
 }
 
-func (s *orderService) CallbackTransaction(ctx context.Context, req *gen.CallbackTransactionRequest) (*gen.Empty, error) {
+func (s *OrderService) CallbackTransaction(ctx context.Context, req *gen.CallbackTransactionRequest) (*gen.Empty, error) {
 	if req.PaymentStatus == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "payment_status cannot be empty")
 	}
@@ -414,6 +404,10 @@ func (s *orderService) CallbackTransaction(ctx context.Context, req *gen.Callbac
 	var paymentStatus constanta.PaymentStatus
 	err := paymentStatus.Scan(req.PaymentStatus)
 	if err != nil {
+		return nil, err
+	}
+
+	if paymentStatus.String() == "UNKNOWN" {
 		return nil, status.Errorf(codes.InvalidArgument, "payment_status is %s, must be one of %s or %s", paymentStatus.String(), constanta.PAID, constanta.FAILED)
 	}
 
@@ -423,6 +417,10 @@ func (s *orderService) CallbackTransaction(ctx context.Context, req *gen.Callbac
 			return nil, status.Errorf(codes.NotFound, "order not found")
 		}
 		return nil, status.Errorf(codes.Internal, "failed to get order: %v", err)
+	}
+
+	if order.Status != constanta.OrderStatusStockReserved {
+		return nil, status.Errorf(codes.FailedPrecondition, "order status must be status reserved")
 	}
 
 	if paymentStatus == constanta.PAID {
@@ -451,7 +449,7 @@ func AppendUserIDintoContextGrpcClient(ctx context.Context, userID uuid.UUID) co
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
-func (s *orderService) GetOrder(ctx context.Context, req *gen.GetOrderRequest) (*gen.Order, error) {
+func (s *OrderService) GetOrder(ctx context.Context, req *gen.GetOrderRequest) (*gen.Order, error) {
 	userID, err := extractor.ExtractUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -477,7 +475,7 @@ func (s *orderService) GetOrder(ctx context.Context, req *gen.GetOrderRequest) (
 	return order.GetGenOrder(), nil
 }
 
-func (s *orderService) GetOrderList(ctx context.Context, req *gen.GetOrderListRequest) (*gen.Orders, error) {
+func (s *OrderService) GetOrderList(ctx context.Context, req *gen.GetOrderListRequest) (*gen.Orders, error) {
 	userID, err := extractor.ExtractUserIDFromMetadata(ctx)
 	if err != nil {
 		return nil, err
