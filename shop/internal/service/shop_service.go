@@ -8,6 +8,9 @@ import (
 	"github.com/elangreza/e-commerce/gen"
 )
 
+//go:generate mockgen -source=shop_service.go -destination=mock/mock_shop_service.go -package=mock
+//go:generate mockgen -package=mock -destination=mock/mock_deps.go github.com/elangreza/e-commerce/gen WarehouseServiceClient
+
 type (
 	ShopRepo interface {
 		GetShopByIDs(ctx context.Context, IDs ...int64) ([]entity.Shop, error)
