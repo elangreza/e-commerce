@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/elangreza/e-commerce/pkg/contextrequest"
 	"github.com/elangreza/e-commerce/pkg/extractor"
-	globalcontanta "github.com/elangreza/e-commerce/pkg/globalcontanta"
 	"github.com/elangreza/e-commerce/pkg/money"
 
 	"github.com/elangreza/e-commerce/gen"
@@ -16,7 +16,6 @@ import (
 	"github.com/elangreza/e-commerce/order/internal/entity"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -283,7 +282,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *gen.CreateOrderRequ
 		}, orderID)
 	}
 
-	ctx = AppendUserIDintoContextGrpcClient(ctx, userID)
+	ctx = contextrequest.AppendUserIDintoContextGrpcClient(ctx, userID)
 
 	stocks := []*gen.Stock{}
 	for _, item := range cart.Items {
@@ -374,7 +373,7 @@ func (s *OrderService) RemoveExpiryOrder(ctx context.Context, duration time.Dura
 
 		if order.Status == constanta.OrderStatusStockReserved {
 			var releaseStock = func() error {
-				ctx := AppendUserIDintoContextGrpcClient(context.Background(), order.UserID)
+				ctx := contextrequest.AppendUserIDintoContextGrpcClient(context.Background(), order.UserID)
 				_, err := s.warehouseServiceClient.ReleaseStock(ctx, &gen.ReleaseStockRequest{
 					OrderId: order.ID.String(),
 				})
@@ -442,11 +441,6 @@ func (s *OrderService) CallbackTransaction(ctx context.Context, req *gen.Callbac
 	}
 
 	return &gen.Empty{}, nil
-}
-
-func AppendUserIDintoContextGrpcClient(ctx context.Context, userID uuid.UUID) context.Context {
-	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
-	return metadata.NewOutgoingContext(ctx, md)
 }
 
 func (s *OrderService) GetOrder(ctx context.Context, req *gen.GetOrderRequest) (*gen.Order, error) {

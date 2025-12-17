@@ -6,13 +6,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/elangreza/e-commerce/pkg/globalcontanta"
+	"github.com/elangreza/e-commerce/pkg/contextrequest"
 
 	"github.com/elangreza/e-commerce/api/internal/constanta"
 	params "github.com/elangreza/e-commerce/api/internal/params"
 	"github.com/elangreza/e-commerce/gen"
 	"github.com/google/uuid"
-	"google.golang.org/grpc/metadata"
 )
 
 func NewOrderService(pClient gen.OrderServiceClient) *orderService {
@@ -32,8 +31,7 @@ func (s *orderService) AddProductToCart(ctx context.Context, req params.AddToCar
 		return errors.New("error when parsing userID")
 	}
 
-	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
-	newCtx := metadata.NewOutgoingContext(context.Background(), md)
+	newCtx := contextrequest.AppendUserIDintoContextGrpcClient(context.Background(), userID)
 
 	_, err := s.orderServiceClient.AddProductToCart(newCtx, &gen.AddCartItemRequest{
 		ProductId: req.ProductID,
@@ -54,8 +52,7 @@ func (s *orderService) GetCart(ctx context.Context) (*params.GetCartResponse, er
 		return nil, errors.New("error when parsing userID")
 	}
 
-	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
-	newCtx := metadata.NewOutgoingContext(context.Background(), md)
+	newCtx := contextrequest.AppendUserIDintoContextGrpcClient(context.Background(), userID)
 
 	cart, err := s.orderServiceClient.GetCart(newCtx, &gen.Empty{})
 	if err != nil {
@@ -84,8 +81,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req params.CreateOrderRe
 		return nil, errors.New("error when parsing userID")
 	}
 
-	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
-	newCtx := metadata.NewOutgoingContext(context.Background(), md)
+	newCtx := contextrequest.AppendUserIDintoContextGrpcClient(context.Background(), userID)
 
 	order, err := s.orderServiceClient.CreateOrder(newCtx, &gen.CreateOrderRequest{
 		IdempotencyKey: req.IdempotencyKey,
@@ -122,8 +118,7 @@ func (s *orderService) GetOrderList(ctx context.Context, req params.GetOrderList
 		return nil, errors.New("error when parsing userID")
 	}
 
-	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
-	newCtx := metadata.NewOutgoingContext(context.Background(), md)
+	newCtx := contextrequest.AppendUserIDintoContextGrpcClient(context.Background(), userID)
 
 	list, err := s.orderServiceClient.GetOrderList(newCtx, &gen.GetOrderListRequest{
 		StartDate: req.StartDate,
@@ -161,8 +156,7 @@ func (s *orderService) GetOrderDetail(ctx context.Context, orderID string) (*par
 		return nil, errors.New("error when parsing userID")
 	}
 
-	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
-	newCtx := metadata.NewOutgoingContext(context.Background(), md)
+	newCtx := contextrequest.AppendUserIDintoContextGrpcClient(context.Background(), userID)
 
 	order, err := s.orderServiceClient.GetOrder(newCtx, &gen.GetOrderRequest{
 		Id: orderID,

@@ -6,13 +6,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/elangreza/e-commerce/pkg/globalcontanta"
+	"github.com/elangreza/e-commerce/pkg/contextrequest"
 
 	"github.com/elangreza/e-commerce/api/internal/constanta"
 	params "github.com/elangreza/e-commerce/api/internal/params"
 	"github.com/elangreza/e-commerce/gen"
 	"github.com/google/uuid"
-	"google.golang.org/grpc/metadata"
 )
 
 func NewWarehouseService(pClient gen.WarehouseServiceClient) *WarehouseService {
@@ -31,8 +30,7 @@ func (s *WarehouseService) SetWarehouseStatus(ctx context.Context, req params.Se
 		return errors.New("error when parsing userID")
 	}
 
-	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
-	newCtx := metadata.NewOutgoingContext(context.Background(), md)
+	newCtx := contextrequest.AppendUserIDintoContextGrpcClient(context.Background(), userID)
 
 	_, err := s.WarehouseServiceClient.SetWarehouseStatus(newCtx, &gen.SetWarehouseStatusRequest{
 		WarehouseId: req.WarehouseID,
@@ -51,8 +49,7 @@ func (s *WarehouseService) TransferStockBetweenWarehouse(ctx context.Context, re
 		return errors.New("error when parsing userID")
 	}
 
-	md := metadata.New(map[string]string{string(globalcontanta.UserIDKey): userID.String()})
-	newCtx := metadata.NewOutgoingContext(context.Background(), md)
+	newCtx := contextrequest.AppendUserIDintoContextGrpcClient(context.Background(), userID)
 
 	_, err := s.WarehouseServiceClient.TransferStockBetweenWarehouse(newCtx, &gen.TransferStockBetweenWarehouseRequest{
 		FromWarehouseId: req.FromWarehouseId,
