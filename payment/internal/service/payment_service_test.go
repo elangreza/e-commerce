@@ -15,7 +15,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-type WarehouseServiceTestSuite struct {
+type PaymentServiceTestSuite struct {
 	suite.Suite
 	ctrl                   *gomock.Controller
 	svc                    *service.PaymentService
@@ -23,7 +23,7 @@ type WarehouseServiceTestSuite struct {
 	mockOrderServiceClient *mock.MockOrderServiceClient
 }
 
-func (s *WarehouseServiceTestSuite) SetupTest() {
+func (s *PaymentServiceTestSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 
 	s.mockPaymentRepo = mock.NewMockpaymentRepo(s.ctrl)
@@ -36,15 +36,15 @@ func (s *WarehouseServiceTestSuite) SetupTest() {
 	)
 }
 
-func (s *WarehouseServiceTestSuite) TearDownTest() {
+func (s *PaymentServiceTestSuite) TearDownTest() {
 	s.ctrl.Finish()
 }
 
 func TestWarehouseServiceSuite(t *testing.T) {
-	suite.Run(t, new(WarehouseServiceTestSuite))
+	suite.Run(t, new(PaymentServiceTestSuite))
 }
 
-func (s *WarehouseServiceTestSuite) TestProcessPayment() {
+func (s *PaymentServiceTestSuite) TestProcessPayment() {
 
 	tests := []struct {
 		name          string
@@ -87,7 +87,7 @@ func (s *WarehouseServiceTestSuite) TestProcessPayment() {
 	}
 }
 
-func (s *WarehouseServiceTestSuite) TestRollbackPayment() {
+func (s *PaymentServiceTestSuite) TestRollbackPayment() {
 
 	tests := []struct {
 		name          string
@@ -135,7 +135,7 @@ func (s *WarehouseServiceTestSuite) TestRollbackPayment() {
 	}
 }
 
-func (s *WarehouseServiceTestSuite) TestGetPayment() {
+func (s *PaymentServiceTestSuite) TestGetPayment() {
 
 	tests := []struct {
 		name          string
@@ -179,7 +179,7 @@ func (s *WarehouseServiceTestSuite) TestGetPayment() {
 	}
 }
 
-func (s *WarehouseServiceTestSuite) TestUpdatePayment() {
+func (s *PaymentServiceTestSuite) TestUpdatePayment() {
 
 	tests := []struct {
 		name          string
@@ -329,7 +329,7 @@ func (s *WarehouseServiceTestSuite) TestUpdatePayment() {
 	}
 }
 
-func (s *WarehouseServiceTestSuite) TestRemoveExpiryPayment() {
+func (s *PaymentServiceTestSuite) TestRemoveExpiredPayment() {
 	tests := []struct {
 		name          string
 		req           time.Duration
@@ -342,7 +342,7 @@ func (s *WarehouseServiceTestSuite) TestRemoveExpiryPayment() {
 			req:  1 * time.Minute,
 			setupMock: func() {
 				s.mockPaymentRepo.EXPECT().
-					GetExpiryPayments(gomock.Any(), gomock.Any()).
+					GetExpiredPayments(gomock.Any(), gomock.Any()).
 					Return([]entity.Payment{
 						{
 							ID:     uuid.New(),
@@ -387,7 +387,7 @@ func (s *WarehouseServiceTestSuite) TestRemoveExpiryPayment() {
 		s.Run(tt.name, func() {
 			tt.setupMock()
 
-			resp, err := s.svc.RemoveExpiryPayment(context.Background(), tt.req)
+			resp, err := s.svc.RemoveExpiredPayment(context.Background(), tt.req)
 
 			if tt.expectedError != "" {
 				s.Error(err)

@@ -57,19 +57,19 @@ func (mr *MockpaymentRepoMockRecorder) CreatePayment(ctx, payment any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePayment", reflect.TypeOf((*MockpaymentRepo)(nil).CreatePayment), ctx, payment)
 }
 
-// GetExpiryPayments mocks base method.
-func (m *MockpaymentRepo) GetExpiryPayments(ctx context.Context, duration time.Duration) ([]entity.Payment, error) {
+// GetExpiredPayments mocks base method.
+func (m *MockpaymentRepo) GetExpiredPayments(ctx context.Context, duration time.Duration) ([]entity.Payment, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetExpiryPayments", ctx, duration)
+	ret := m.ctrl.Call(m, "GetExpiredPayments", ctx, duration)
 	ret0, _ := ret[0].([]entity.Payment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetExpiryPayments indicates an expected call of GetExpiryPayments.
-func (mr *MockpaymentRepoMockRecorder) GetExpiryPayments(ctx, duration any) *gomock.Call {
+// GetExpiredPayments indicates an expected call of GetExpiredPayments.
+func (mr *MockpaymentRepoMockRecorder) GetExpiredPayments(ctx, duration any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExpiryPayments", reflect.TypeOf((*MockpaymentRepo)(nil).GetExpiryPayments), ctx, duration)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExpiredPayments", reflect.TypeOf((*MockpaymentRepo)(nil).GetExpiredPayments), ctx, duration)
 }
 
 // GetPaymentByTransactionID mocks base method.

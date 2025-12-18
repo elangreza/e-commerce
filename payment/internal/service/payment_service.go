@@ -24,7 +24,7 @@ type (
 		CreatePayment(ctx context.Context, payment entity.Payment) error
 		UpdatePaymentStatusByTransactionID(ctx context.Context, paymentStatus constanta.PaymentStatus, transactionID string) error
 		GetPaymentByTransactionID(ctx context.Context, transactionID string) (*entity.Payment, error)
-		GetExpiryPayments(ctx context.Context, duration time.Duration) ([]entity.Payment, error)
+		GetExpiredPayments(ctx context.Context, duration time.Duration) ([]entity.Payment, error)
 	}
 )
 
@@ -173,8 +173,8 @@ func (p *PaymentService) UpdatePayment(ctx context.Context, req *gen.UpdatePayme
 	}, nil
 }
 
-func (p *PaymentService) RemoveExpiryPayment(ctx context.Context, duration time.Duration) (int, error) {
-	payments, err := p.paymentRepo.GetExpiryPayments(ctx, duration)
+func (p *PaymentService) RemoveExpiredPayment(ctx context.Context, duration time.Duration) (int, error) {
+	payments, err := p.paymentRepo.GetExpiredPayments(ctx, duration)
 	if err != nil {
 		return 0, err
 	}

@@ -103,7 +103,7 @@ func (p *PaymentRepository) GetPaymentByTransactionID(ctx context.Context, trans
 	return &payment, nil
 }
 
-func (p *PaymentRepository) GetExpiryPayments(ctx context.Context, duration time.Duration) ([]entity.Payment, error) {
+func (p *PaymentRepository) GetExpiredPayments(ctx context.Context, duration time.Duration) ([]entity.Payment, error) {
 	q := `SELECT 
 	id,
 	status,

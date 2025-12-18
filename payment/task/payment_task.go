@@ -8,7 +8,7 @@ import (
 
 type (
 	paymentService interface {
-		RemoveExpiryPayment(ctx context.Context, duration time.Duration) (int, error)
+		RemoveExpiredPayment(ctx context.Context, duration time.Duration) (int, error)
 	}
 
 	TaskPayment struct {
@@ -30,14 +30,14 @@ func NewTaskPayment(paymentService paymentService, duration time.Duration) *Task
 	return to
 }
 
-func (to *TaskPayment) removeExpiryPayment() error {
-	expiryPayment, err := to.svc.RemoveExpiryPayment(context.Background(), to.removeExpiryDuration)
+func (to *TaskPayment) removeExpiredPayment() error {
+	ExpiredPayment, err := to.svc.RemoveExpiredPayment(context.Background(), to.removeExpiryDuration)
 	if err != nil {
 		return err
 	}
 
-	if expiryPayment > 0 {
-		fmt.Printf("removing %d payment(s)\n", expiryPayment)
+	if ExpiredPayment > 0 {
+		fmt.Printf("removing %d payment(s)\n", ExpiredPayment)
 	}
 
 	return nil
@@ -56,9 +56,9 @@ func (to *TaskPayment) backgroundJobs() {
 		case <-ticker.C:
 
 			if to.removeExpiryDuration > 0 {
-				err := to.removeExpiryPayment()
+				err := to.removeExpiredPayment()
 				if err != nil {
-					fmt.Println("getting error from RemoveExpiryPayment", err)
+					fmt.Println("getting error from RemoveExpiredPayment", err)
 				}
 			}
 
