@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type OrderServiceTestSuite struct {
+type ShopServiceTestSuite struct {
 	suite.Suite
 	ctrl                *gomock.Controller
 	mockWarehouseClient *mock.MockWarehouseServiceClient
@@ -23,7 +23,7 @@ type OrderServiceTestSuite struct {
 	mockShopRepo        *mock.MockShopRepo
 }
 
-func (s *OrderServiceTestSuite) SetupTest() {
+func (s *ShopServiceTestSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.mockWarehouseClient = mock.NewMockWarehouseServiceClient(s.ctrl)
 	s.mockShopRepo = mock.NewMockShopRepo(s.ctrl)
@@ -34,15 +34,15 @@ func (s *OrderServiceTestSuite) SetupTest() {
 	)
 }
 
-func (s *OrderServiceTestSuite) TearDownTest() {
+func (s *ShopServiceTestSuite) TearDownTest() {
 	s.ctrl.Finish()
 }
 
-func TestOrderServiceSuite(t *testing.T) {
-	suite.Run(t, new(OrderServiceTestSuite))
+func ShopServiceSuite(t *testing.T) {
+	suite.Run(t, new(ShopServiceTestSuite))
 }
 
-func (s *OrderServiceTestSuite) TestGetShops() {
+func (s *ShopServiceTestSuite) TestGetShops() {
 	userID := uuid.New()
 
 	md := metadata.New(map[string]string{
