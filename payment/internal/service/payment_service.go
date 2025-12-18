@@ -16,7 +16,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-//go:generate mockgen -source=product_service.go -destination=./mock/mock_product_service.go -package=mock
+//go:generate mockgen -source=payment_service.go -destination=mock/mock_payment_service.go -package=mock
+//go:generate mockgen -package=mock -destination=mock/mock_deps.go github.com/elangreza/e-commerce/gen OrderServiceClient
 
 type (
 	paymentRepo interface {
@@ -27,7 +28,7 @@ type (
 	}
 )
 
-type paymentService struct {
+type PaymentService struct {
 	paymentRepo        paymentRepo
 	maxTimeToBeExpired time.Duration
 	orderService       gen.OrderServiceClient
@@ -38,15 +39,15 @@ func NewPaymentService(
 	paymentRepo paymentRepo,
 	maxTimeToBeExpired time.Duration,
 	orderService gen.OrderServiceClient,
-) *paymentService {
-	return &paymentService{
+) *PaymentService {
+	return &PaymentService{
 		paymentRepo:        paymentRepo,
 		maxTimeToBeExpired: maxTimeToBeExpired,
 		orderService:       orderService,
 	}
 }
 
-func (p *paymentService) ProcessPayment(ctx context.Context, req *gen.ProcessPaymentRequest) (*gen.ProcessPaymentResponse, error) {
+func (p *PaymentService) ProcessPayment(ctx context.Context, req *gen.ProcessPaymentRequest) (*gen.ProcessPaymentResponse, error) {
 	transactionID := generateBase62ID(defaultLength)
 	err := p.paymentRepo.CreatePayment(ctx, entity.Payment{
 		Status:        constanta.WAITING,
@@ -63,7 +64,7 @@ func (p *paymentService) ProcessPayment(ctx context.Context, req *gen.ProcessPay
 	}, nil
 }
 
-func (p *paymentService) RollbackPayment(ctx context.Context, req *gen.RollbackPaymentRequest) (*gen.Empty, error) {
+func (p *PaymentService) RollbackPayment(ctx context.Context, req *gen.RollbackPaymentRequest) (*gen.Empty, error) {
 	payment, err := p.paymentRepo.GetPaymentByTransactionID(ctx, req.TransactionId)
 	if err != nil {
 		return nil, err
@@ -95,7 +96,7 @@ func generateBase62ID(length int) string {
 	return string(result)
 }
 
-func (p *paymentService) GetPayment(ctx context.Context, req *gen.GetPaymentRequest) (*gen.GetPaymentResponse, error) {
+func (p *PaymentService) GetPayment(ctx context.Context, req *gen.GetPaymentRequest) (*gen.GetPaymentResponse, error) {
 	payment, err := p.paymentRepo.GetPaymentByTransactionID(ctx, req.TransactionId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -113,7 +114,7 @@ func (p *paymentService) GetPayment(ctx context.Context, req *gen.GetPaymentRequ
 	}, nil
 }
 
-func (p *paymentService) UpdatePayment(ctx context.Context, req *gen.UpdatePaymentRequest) (*gen.UpdatePaymentResponse, error) {
+func (p *PaymentService) UpdatePayment(ctx context.Context, req *gen.UpdatePaymentRequest) (*gen.UpdatePaymentResponse, error) {
 	payment, err := p.paymentRepo.GetPaymentByTransactionID(ctx, req.TransactionId)
 	if err != nil {
 		return nil, err
@@ -123,6 +124,10 @@ func (p *paymentService) UpdatePayment(ctx context.Context, req *gen.UpdatePayme
 		return &gen.UpdatePaymentResponse{
 			Status: string(payment.Status),
 		}, nil
+	}
+
+	if payment.TotalAmount.GetCurrencyCode() != req.TotalAmount.GetCurrencyCode() {
+		return nil, status.Error(codes.InvalidArgument, "currency code not match")
 	}
 
 	if req.TotalAmount.Units > payment.TotalAmount.Units || req.TotalAmount.Units < payment.TotalAmount.Units {
@@ -168,7 +173,7 @@ func (p *paymentService) UpdatePayment(ctx context.Context, req *gen.UpdatePayme
 	}, nil
 }
 
-func (p *paymentService) RemoveExpiryPayment(ctx context.Context, duration time.Duration) (int, error) {
+func (p *PaymentService) RemoveExpiryPayment(ctx context.Context, duration time.Duration) (int, error) {
 	payments, err := p.paymentRepo.GetExpiryPayments(ctx, duration)
 	if err != nil {
 		return 0, err
