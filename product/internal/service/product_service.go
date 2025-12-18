@@ -1,6 +1,7 @@
 package service
 
-//go:generate mockgen -source=product_service.go -destination=./mock/mock_product_service.go -package=mock
+//go:generate mockgen -source=product_service.go -destination=mock/mock_product_service.go -package=mock
+//go:generate mockgen -package=mock -destination=mock/mock_deps.go github.com/elangreza/e-commerce/gen WarehouseServiceClient
 
 import (
 	"context"
@@ -25,20 +26,20 @@ type (
 	}
 )
 
-func NewProductService(productRepo productRepo, warehouseServiceClient gen.WarehouseServiceClient) *productService {
-	return &productService{
+func NewProductService(productRepo productRepo, warehouseServiceClient gen.WarehouseServiceClient) *ProductService {
+	return &ProductService{
 		productRepo:            productRepo,
 		warehouseServiceClient: warehouseServiceClient,
 	}
 }
 
-type productService struct {
+type ProductService struct {
 	productRepo            productRepo
 	warehouseServiceClient gen.WarehouseServiceClient
 	gen.UnimplementedProductServiceServer
 }
 
-func (p *productService) ListProducts(ctx context.Context, req *gen.ListProductsRequest) (*gen.ListProductsResponse, error) {
+func (p *ProductService) ListProducts(ctx context.Context, req *gen.ListProductsRequest) (*gen.ListProductsResponse, error) {
 	paginationParams := params.PaginationParams{
 		Sorts:  strings.Split(req.GetSortBy(), ","),
 		Search: req.GetSearch(),
@@ -104,7 +105,7 @@ func (p *productService) ListProducts(ctx context.Context, req *gen.ListProducts
 	}, nil
 }
 
-func (p *productService) GetProducts(ctx context.Context, req *gen.GetProductsRequest) (*gen.Products, error) {
+func (p *ProductService) GetProducts(ctx context.Context, req *gen.GetProductsRequest) (*gen.Products, error) {
 	productIDs := []uuid.UUID{}
 
 	for _, productID := range req.Ids {
@@ -157,7 +158,7 @@ func (p *productService) GetProducts(ctx context.Context, req *gen.GetProductsRe
 	}, nil
 }
 
-func (p *productService) getStockMap(ctx context.Context, products []entity.Product) (map[string]int64, error) {
+func (p *ProductService) getStockMap(ctx context.Context, products []entity.Product) (map[string]int64, error) {
 	if len(products) == 0 {
 		return nil, nil
 	}
