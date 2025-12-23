@@ -76,7 +76,7 @@ function CartProductAndSubTotal({ stock, price, productID }: CartProductAndSubTo
                             +
                         </ButtonCartAndStock>
                     </div>
-                    <ButtonCartAndStock disabled={stock === total} action={removeProductInCart} >
+                    <ButtonCartAndStock disabled={false} action={removeProductInCart} >
                         remove from cart
                     </ButtonCartAndStock>
                 </div>

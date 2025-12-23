@@ -1,5 +1,6 @@
 "use client";
 
+import { useCartStore } from "@/store/cart";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -9,6 +10,8 @@ function Header() {
     const [search, setSearch] = useState("")
     const searchParams = useSearchParams();
     const router = useRouter()
+    const totalCartItems = useCartStore((state) => state.Items.reduce((total, item) => total + item.Quantity, 0))
+    const isLoading = useCartStore((state) => state.isLoading)
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
@@ -43,7 +46,7 @@ function Header() {
                 </button>
             </form>
             <Link href="/cart">
-                <HeaderText name="My Cart" />
+                <HeaderText name={isLoading ? `My Cart (loading...)` : `My Cart (${totalCartItems})`} />
             </Link>
         </div>
     )

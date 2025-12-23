@@ -11,7 +11,6 @@ function CartItems() {
 
     const cartItems = useCartStore((state) => state.Items)
     const [carts, setCarts] = useState<GetDetailsProducts>()
-    const [totalCart, setTotalCart] = useState(0)
     const totalPrice = useCartStore((state) => state.totalPrice)
     const calculateTotalPrice = useCartStore((state) => state.calculateTotalPrice)
 
