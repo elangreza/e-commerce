@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import HeaderText from "./HeaderText";
@@ -26,7 +27,9 @@ function Header() {
 
     return (
         <div className="flex justify-between items-center w-full max-w-5xl m-2 p-2">
-            <HeaderText name="Toko saya" />
+            <Link href="/">
+                <HeaderText name="Toko saya" />
+            </Link>
             <form onSubmit={handleSubmit}>
                 <input
                     value={search}
@@ -39,7 +42,9 @@ function Header() {
                     Search
                 </button>
             </form>
-            <HeaderText name="My Cart" />
+            <Link href="/cart">
+                <HeaderText name="My Cart" />
+            </Link>
         </div>
     )
 }

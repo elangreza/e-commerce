@@ -1,5 +1,6 @@
 import ProductCard from "@/components/ProductCard";
 import { ListProductResponse } from "@/types/product";
+import { DataResponse } from "@/types/response";
 
 async function getListProducts(page: number, search: string): Promise<ListProductResponse> {
   const params = new URLSearchParams({
@@ -8,12 +9,13 @@ async function getListProducts(page: number, search: string): Promise<ListProduc
     ...(search && { search })
   });
 
-  const res = await fetch(`http://localhost:8080/api/products?${params.toString()}`)
+  const res = await fetch(`http://localhost:8080/products?${params.toString()}`)
   if (!res.ok) {
     throw new Error(`Failed to fetch products: ${res.status} ${res.statusText}`)
   }
 
-  return res.json() as Promise<ListProductResponse>
+  var data: DataResponse = await res.json()
+  return data.data as ListProductResponse
 }
 
 interface PageProps {

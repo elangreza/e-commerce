@@ -1,22 +1,25 @@
 import ProductDescription from "@/components/ProductDescription";
 import ProductTotalAndAddToCartProps from "@/components/ProductTotalAndAddToCart";
 import { GetDetailsProducts } from "@/types/product";
+import { DataResponse } from "@/types/response";
 import clsx from "clsx";
 import Image from "next/image";
 
 async function getProductsDetails(id: string): Promise<GetDetailsProducts> {
   const params = new URLSearchParams({
     "with_stock": "true",
-    id,
+    "id": id,
   });
 
-  const res = await fetch(`http://localhost:8080/api/product?${params.toString()}`)
-
+  const res = await fetch(`http://localhost:8080/product?${params.toString()}`)
   if (!res.ok) {
     throw new Error(`Failed to fetch products: ${res.status} ${res.statusText}`)
   }
 
-  return res.json() as Promise<GetDetailsProducts>
+
+  var data: DataResponse = await res.json()
+  console.log(data)
+  return data.data as GetDetailsProducts
 }
 
 interface PageProps {
@@ -29,6 +32,7 @@ export default async function ProductsDetailPage({ params }: PageProps) {
   const { id } = await params;
 
   const products = await getProductsDetails(id)
+  console.log(products)
   const product = products.products[0]
 
   return (

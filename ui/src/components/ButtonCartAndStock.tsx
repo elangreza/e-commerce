@@ -12,7 +12,7 @@ function ButtonCartAndStock({
     return (
         <button
             className={
-                "max-w-10 w-full h-10 bg-white border-2 rounded border-white text-black disabled:bg-gray-300 disabled:border-gray-300 disabled:cursor-not-allowed"
+                "w-auto px-4 h-10 bg-white border-2 rounded border-white text-black disabled:bg-gray-300 disabled:border-gray-300 disabled:cursor-not-allowed"
             }
             onClick={action}
             disabled={disabled}

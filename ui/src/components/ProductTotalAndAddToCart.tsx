@@ -1,6 +1,6 @@
 "use client";
 
-import { CartItem, useCartStore } from "@/store/cart";
+import { useCartStore } from "@/store/cart";
 import { Money } from "@/types/product";
 import { useState } from "react";
 import ButtonCartAndStock from "./ButtonCartAndStock";
@@ -21,14 +21,7 @@ function ProductTotalAndAddToCartProps({ stock, price, productID }: ProductTotal
     function submitForm(e: React.FormEvent) {
         e.preventDefault()
 
-        var a: CartItem = {
-            ProductID: productID,
-            Quantity: total,
-        }
-
-        addCartItem(a)
-
-        // TODO add product into cart
+        addCartItem(productID, total)
     }
 
 
