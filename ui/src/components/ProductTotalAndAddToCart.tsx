@@ -89,8 +89,8 @@ function ProductTotalAndAddToCartProps({ stock, price, productID }: ProductTotal
                         value={total}
                         className="text-center bg-white text-2xl m-2 text-black max-w-20 h-10 border-2 rounded border-white"
                         onChange={handleTotal} />
-                    {/* <ButtonCartAndStock disabled={isLoading || total + currentQuantityInCart > stock - 1 || stock === total} action={handleAddTotal} > */}
-                    <ButtonCartAndStock disabled={isLoading || stock === total} action={handleAddTotal} >
+                    {/* <ButtonCartAndStock disabled={isLoading || stock === total} action={handleAddTotal} > */}
+                    <ButtonCartAndStock disabled={isLoading || total + currentQuantityInCart > stock - 1 || stock === total} action={handleAddTotal} >
                         +
                     </ButtonCartAndStock>
                 </div>

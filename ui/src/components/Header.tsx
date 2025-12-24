@@ -6,12 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import HeaderText from "./HeaderText";
 
+
 function Header() {
     const [search, setSearch] = useState("")
     const searchParams = useSearchParams();
     const router = useRouter()
     const totalCartItems = useCartStore((state) => state.Items.reduce((total, item) => total + item.Quantity, 0))
     const isLoading = useCartStore((state) => state.isLoading)
+
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
@@ -46,8 +48,10 @@ function Header() {
                 </button>
             </form>
             <Link href="/cart">
-                <HeaderText name={isLoading ? `My Cart (loading...)` : `My Cart (${totalCartItems})`} />
+                <HeaderText name={isLoading ? `Cart (loading...)` : `Cart (${totalCartItems})`} />
             </Link>
+
+
         </div>
     )
 }

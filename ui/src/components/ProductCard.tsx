@@ -16,7 +16,6 @@ function ProductCard({ product }: ProductCardProps) {
                     src={product.image_url}
                     alt={product.name}
                     className="w-full h-40 object-cover"
-
                 />
                 <p className="font-bold mt-2 text-black overflow-hidden text-ellipsis line-clamp-2">{product.name}</p>
                 <p className="text-gray-600">{product.price.currency_code} - {product.price.units}</p>

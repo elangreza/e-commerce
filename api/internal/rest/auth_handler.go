@@ -96,5 +96,5 @@ func (ah *AuthHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendSuccessResponse(w, http.StatusOK, res)
+	sendSuccessResponse(w, http.StatusOK, map[string]string{"token": res})
 }

@@ -20,7 +20,7 @@ build: build-builder build-runtime
 	cp ./warehouse/env.example ./warehouse/warehouse.env
 	cp ./shop/env.example ./shop/shop.env
 	cp ./payment/env.example ./payment/payment.env
-	docker compose up --build
+	docker compose up --build -d
 
 copy-to-local:
 	@echo "Copying Docker data to local development..."
